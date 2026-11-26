@@ -1,4 +1,20 @@
 /-
+RETIREMENT NOTE (2026-11-26, PI 18:01 adjudication A1 — retired state, kept in
+  place, 0 deletions): the thermodynamic reconstruction face is superseded by
+  `harness/DeposonThermoRecon.lean` (v2 round12-absorbed · 32 theorems · 0 sorry ·
+  sha12 45c56f1e5487), which inherits all 15 theorems of this file — T0–T9 family,
+  verbatim same proofs under the State→Ledger rename (cross-check: case file ①
+  §四 of 2026-11-26: 0 replaced, 15 inherited, 0 superseded; plus the recon file's
+  7 additions: readback-payment family, deposit-terminal family, transmit/reflect
+  conservation+monotone completion, five-transition no_recover_shape, proj bridge,
+  settle_readback scenario, sum_all_zero). This file remains (a) the preview.10
+  frozen-face companion and (b) the 15-theorem register of record; every line below
+  this block is byte-identical to the pre-retirement file — logic and proofs are
+  0-touch, the file sha12 changes only through this docstring
+  (pre 00f64f8f9608 → post registered in the retirement commit note).
+  Reconstruction-slot absorption text: rev4 §2.8 承接稿 (PI A8 追认).
+
+
 DeposonThermo.lean — machine-checked conservation of the thermodynamic ledger core
 (companion to `mcp/thermo_core.py`; phantom-limb generation, interface H).
 
