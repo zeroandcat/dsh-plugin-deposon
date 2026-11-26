@@ -51,6 +51,7 @@ jobs:
           tmpd = tempfile.mkdtemp(prefix="executor_smoke_")
           env = dict(os.environ); env.pop("DEPOSON_EXECUTOR", None)
           env["CONDENSATE_LEDGER"] = os.path.join(tmpd, "ledger.jsonl")
+          env["DEPOSON_THERMO"] = json.dumps({"cap": 4, "horizon": 2})  # pressurised params carried by the smoke itself (no ambient-env dependence)
           p = subprocess.Popen([sys.executable, "mcp/mcp_server.py"], stdin=subprocess.PIPE,
                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env)
           def rpc(o):
@@ -66,7 +67,8 @@ jobs:
           assert w.startswith("written:") and "执行器已凝华" in w, w
           call("deposon_memory_write", {"key":"p.b","text":"beta-secret"})
           call("deposon_memory_read", {"prefix":"p.a"})
-          for _ in range(3): call("deposon_thermo_settle", {})
+          for _ in range(3):
+              call("deposon_thermo_settle", {}); call("deposon_memory_read", {"prefix":"p.a"})  # settle + keep p.a transmitted (p.b ages -> horizon dissipation)
           rp = call("deposon_memory_read", {"prefix":"p."})
           lines = rp.split("\n")
           assert lines[0] == "p.a: alpha-secret", rp
@@ -82,8 +84,8 @@ jobs:
           p.kill()
           print("executor stdio smoke OK (ciphertext ledger, K-out phantom, conservation)")
           PYEOF
-      - name: Ledger dual-implementation cross-check (Lean T1-T6 vs Python core, zero network)
-        run: python mcp/ledger_crosscheck.py
+      - name: Ledger dual-implementation cross-check (Lean T1-T6 vs Python core, zero network; E-off arm — the frozen cross-check asserts the preview.10 ledger's corrupt-line tolerance)
+        run: DEPOSON_EXECUTOR=0 python mcp/ledger_crosscheck.py
       - name: Thermodynamic ledger dual-implementation cross-check (Lean DeposonThermo vs Python core, hand-computed settlement vector)
         run: python mcp/thermo_crosscheck.py
       - name: Thermo before/after demo (frozen 500-op trace; utilisation 0 -> 69.23 %, hit rate 50.31 -> 47.85 %)
@@ -109,8 +111,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: dsh plugin load smoke (mock Cordis context, includes gates self-test)
-        run: node tests/test_plugin_load.mjs
+      - name: dsh plugin load smoke (mock Cordis context, includes gates self-test; E-off arm — the static mirror parity and the phantom check assert the preview.10 face; executor-face smoke is the step above)
+        run: DEPOSON_EXECUTOR=0 node tests/test_plugin_load.mjs
       - name: Artifacts policy check (no readings in repo)
         run: |
           ! git ls-files | grep -E '\.(jsonl|log)$|(^|/)artifacts/'

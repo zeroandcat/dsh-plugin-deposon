@@ -3,6 +3,7 @@
 # released as pointers/archives alongside evidence rounds, not as repo files.
 artifacts/
 *.jsonl
+*.pool
 *.log
 *.tar.*
 .olean
