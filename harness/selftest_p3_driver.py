@@ -99,8 +99,25 @@ def sha12f(p):
     return hashlib.sha256(open(p, 'rb').read()).hexdigest()[:16]
 
 
-# ====================================================================== T00 钉与环境
+# ====================================================================== T00 钉与环境（preview.12：拆 T00a 硬门／T00b 环境格登记——处置注·观察 1）
+def _env_cell():
+    """环境格（处置注·观察 1 改法）：A 无训练资产／B 资产＋GPU／C 资产＋无 GPU。"""
+    miss = [p for p in (D.MP, D.DP, D.CHARGEQ, D.R31CKPT if D.START_POINT == '甲' else D.R1CKPT) if not os.path.exists(p)]
+    try:
+        import torch
+        cuda = bool(torch.cuda.is_available())
+    except Exception:  # noqa: BLE001
+        cuda = None
+    if miss:
+        return 'A', cuda
+    if cuda is True:
+        return 'B', cuda
+    return ('C', cuda) if cuda is False else ('C?', cuda)
+
 def t00(out):
+    return _t00a(out) and _t00b(out)
+
+def _t00a(out):
     D.load_executor()
     ev = {'executor_sha16': D.sha_file(D.ix.__file__)[:16], 'thermo_core_sha16': D.sha_file(D.tc.__file__)[:16],
           'slot_calc_v2_sha16': D.sha_file(os.path.join(HERE, 'horizon_slot_calc_v2.py'))[:16],
@@ -116,8 +133,17 @@ def t00(out):
     r32 = os.path.join(HERE, 'deepen_r32.py')
     ev['r32_local_copy'] = (D.sha_file(r32)[:16] if os.path.exists(r32) else None)
     ok = (ev['executor_sha16'] == D.PIN_EXECUTOR[:16] and ev['thermo_core_sha16'] == D.PIN_THERMO_CORE[:16]
-          and ev['slot_calc_v2_sha16'] == D.PIN_SLOT_CALC_V2[:16] and ev['torch_cuda'] is False)
-    return rec('T00', '钉定指纹（执行器／冻结面／slot_calc_v2）与本机 CPU 态', ok, ev, ac=['AC-01', 'AC-02'])
+          and ev['slot_calc_v2_sha16'] == D.PIN_SLOT_CALC_V2[:16])
+    return rec('T00a', '钉定指纹硬门（执行器／冻结面／slot_calc_v2）——任何机必过（GPU 态只入 T00b 登记位）', ok, ev, ac=['AC-01', 'AC-02'])
+
+def _t00b(out):
+    cell, cuda = _env_cell()
+    note = {'A': '格 A·无训练资产（CPU 开发机）——T17 冒烟格期望 rc3＋「训练资产缺位」',
+            'B': '格 B·资产＋GPU（点火机）——T17 冒烟格实跑 3 步＝点火机冒烟（设计内）·期望 rc0＋SMOKE-DONE',
+            'C': '格 C·资产＋无 GPU（无卡重启机）——驱动器修后期望 rc3＋「CUDA 不可用」（修前 rc10＝known-gap·处置注）',
+            'C?': '格 C?·资产＋CUDA 探测失败（torch import 异常）——如实登记'}.get(cell, '')
+    return rec('T00b', '环境格判定（登记位·永不 FAIL）——T17 分支定期望的取值源（处置注·观察 1 改法）', True,
+               {'env_cell': cell, 'torch_cuda': cuda, 't17_expectation_source': note}, ac=[])
 
 
 # ====================================================================== T01 SM-01 基线逐字段复现
@@ -512,9 +538,11 @@ def t17(out):
     exp = {'help': 0, 'sample': 0, 'arm_no_manifest': 4, 'backend_mismatch': 4, 'signal_mismatch': 4, 'freeze_no_horizon': 4, 'H_ge_age_death_I_c': 4}
     rc_ok = all(res[k]['rc'] == v for k, v in exp.items())
     smk = res['smoke_no_manifest_config_ok_until_assets']
-    smk_ok = (smk['rc'] == 3 and '训练资产缺位' in smk['tail']) or smk['rc'] == 0   # 本机无资产→3（preflight·未装载 GPU）；点火机资产在位→须走训练
+    cell, _ = _env_cell()   # preview.12：按 T00b 环境格分支定期望（处置注·观察 2 改法②）——「两跑并集」不再需要
+    _exp = {'A': (3, '训练资产缺位'), 'B': (0, 'DEEPEN-R33-SMOKE-DONE'), 'C': (3, 'CUDA 不可用')}.get(cell, (3, '训练资产缺位'))
+    smk_ok = (smk['rc'] == _exp[0] and _exp[1] in smk['tail']) or smk['rc'] == 0   # 点火机资产在位→须走训练（rc0 兜底）
     ok = rc_ok and cfg_ok and smk_ok
-    return rec('T17', 'Q-10 退出码契约（CLI）：help/sample 0·配置拒跑 4（无 manifest／串线／无 horizon／I-c 违反）·冒烟无 manifest 过配置门（本机资产缺→3）', ok, {'rc': res, 'config_sample_ok': cfg_ok, 'expected': exp}, ac=['AC-10', 'AC-14', 'AC-90'])
+    return rec('T17', 'Q-10 退出码契约（CLI）：help/sample 0·配置拒跑 4（无 manifest／串线／无 horizon／I-c 违反）·冒烟格按 T00b 环境格分支（A→3 资产缺／B→0 冒烟／C→3 CUDA 不可用·驱动器修后）', ok, {'rc': res, 'config_sample_ok': cfg_ok, 'expected': exp, 'env_cell': cell}, ac=['AC-10', 'AC-14', 'AC-90'])
 
 
 # ====================================================================== T18 四分类与 exact_match 口径
@@ -529,7 +557,7 @@ def t18(out):
 
 # ====================================================================== AC×41 自评表
 AC_ROWS = [  # (AC, 组, 核法位, 测试 id, 本机判定或 'PENDING' 说明)
-    ('AC-01', 'G0', 'r32 sha 不变·驱动器新文件', ['T00', 'git'], '过（r32 不在仓·钉 PIN_R32 ba7214640831·preflight 核；驱动器＝新文件·git 0 改已验件）'),
+    ('AC-01', 'G0', 'r32 sha 不变·驱动器新文件', ['T00a', 'git'], '过（r32 不在仓·钉 PIN_R32 ba7214640831·preflight 核；驱动器＝新文件·git 0 改已验件）'),
     ('AC-02', 'G0', '三钉 sha', ['T00'], '过（执行器 d2189f2c4f1e585e／thermo_core f47d4ab7700c4533／slot_calc v2 11e044d2145183df）；P4 82/82＋Lean 钉＝点火机位（preflight 报告位）'),
     ('AC-03', 'G0', 'criteria v1.2 sha', ['T08'], '过（9d10c2b3b4c577f7 只读加载·0 改）'),
     ('AC-10', 'G1', '取值集', ['T06', 'T17'], '过'), ('AC-11', 'G1', '串线', ['T06'], '过'), ('AC-12', 'G1', 'c1', ['T07'], '过'), ('AC-13', 'G1', 'g_policy 两处相等', ['T06', 'T14'], '过（配置 ARM_CFG＝读数包 executor_audit.probe.g_policy）'),

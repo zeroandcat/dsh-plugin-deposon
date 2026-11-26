@@ -49,6 +49,30 @@ dsh plugin add path:./dsh-plugin-deposon
 > `apply` 契约＋bundle 声明＋config 消费；agent 工具注册对已知 API 形态做
 > 防御性探测。
 
+## 更新与升级（deepseek-harness 契约·preview.12）
+
+沿四支柱对齐 dsh 插件 update/upgrade 契约：
+
+- **版本**：`package.json` 为唯一版本源——MCP `clientInfo` 握手与升级工具均读它（0 手写版本串）。
+- **依赖**：`engines.node >=22`·`engines.dsh >=0.1.0 <0.2.0`（dsh 为开发者预览·破坏性变更有预告·范围封顶）；
+  `cryptography>=41` **仅执行器面硬依赖**——preview.12 起 E-off 面 0 第三方依赖（执行器 lazy import·
+  缺包明示 fail-loud·不静默降级）。
+- **配置**：bundle patch 配置键与 `DEPOSON_*` env 跨版本只增不删；账本数据**绝不适地迁移**
+  （append-only·时代分离是设计——执行器代账本在 preview.10 面读即 fail-loud·反之亦然）。
+- **回滚**：`apply` 先把代码面快照到 `.deposon-rollback/<ts>/`·装后自检失败自动恢复；
+  `ledger.jsonl`／`*.pool`／`~/.deposon` 在快照面之外——数据永不回滚。
+
+```bash
+node plugin/update.mjs selfcheck                 # 依赖支柱（只读）
+node plugin/update.mjs plan [--src <path>] [--ledger <p>]   # 计划 JSON·exit 0|2
+node plugin/update.mjs apply --src path:<本地树>            # 快照 → 装 → 自检 →（败自动回滚）
+node plugin/update.mjs rollback                  # 恢复最近代码面快照
+# 远端源（git/npm）输出宿主命令序列（dsh plugin add ＝ 重装 ＝ 升级）
+```
+
+era 握手（preview.12）：MCP `initialize` 响应自报 `era`（`"executor" | "preview.10"`）
+＋`executorConfigDigest`；驱动器/自测件声明期望 era·不等即 fail-loud（防臂串线）。
+
 ## 快速开始（复算）
 
 ```bash

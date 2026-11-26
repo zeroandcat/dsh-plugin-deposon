@@ -214,7 +214,11 @@ check(
 const phantom = await text('deposon_memory_read', { prefix: 'user.' })
 check(
   'phantom limb: dissipated memory is reflected as ⟨幻肢⟩ (felt, 0 source text replayed)',
-  phantom.includes('⟨幻肢⟩') && phantom.includes('已散失') && !phantom.includes('咖啡'),
+  // preview.12: era-compatible phantom wording (executor K-out tombstone line says
+  // '曾有 1 条散失', preview.10 ledger line says '已散失' — assert the shared invariants:
+  // felt, dissipation disclosed, irreversible, zero source text replayed).
+  // (pre-existing breakage at HEAD under the executor-era default; fixed here.)
+  phantom.includes('⟨幻肢⟩') && phantom.includes('散失') && phantom.includes('不可复原') && !phantom.includes('咖啡'),
 )
 const replant = await text('deposon_memory_write', { key: 'user.drink', text: '茶·热' })
 const reread = await text('deposon_memory_read', { prefix: 'user.' })

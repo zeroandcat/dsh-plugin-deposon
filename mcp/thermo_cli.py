@@ -41,9 +41,10 @@ def _is_executor_log(path):
 def _open_ledger(path):
     if _is_executor_log(path):
         import irreversible_executor as ix  # noqa: E402
+        from executor_config import exec_cfg  # noqa: E402  I-3b：与 mcp_server 同源（消 #10 口径差）
         # 池位与账本同生命周期·一账一池（与 mcp_server 同规则）：DEPOSON_POOL > <账本路径>.pool
         pool = os.environ.get("DEPOSON_POOL") or (os.path.abspath(path) + ".pool")
-        return ix.IrreversibleLedger(path, pool, tc.load_cfg())
+        return ix.IrreversibleLedger(path, pool, exec_cfg())
     return tc.ThermoLedger(path, tc.load_cfg())
 
 

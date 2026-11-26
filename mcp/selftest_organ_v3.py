@@ -461,7 +461,10 @@ def main():
     mcp_dir = os.path.dirname(tc.__file__)
     _d10_env = dict(os.environ); _d10_env["DEPOSON_EXECUTOR"] = "0"
     r = subprocess.run([sys.executable, os.path.join(mcp_dir, "selftest_mcp.py")], capture_output=True, text=True, timeout=60, env=_d10_env)
-    check("D10 冻结面 selftest_mcp.py SELFTEST-PASS", "SELFTEST-PASS" in r.stdout, r.stdout.strip().splitlines()[-1][:70])
+    # 判据取尾行展示（preview.12 防崩）：stdout 空时回退 stderr 尾——子进程早夭（如
+    # ImportError/exit 3）不再 IndexError 崩在断言展示位·"SELFTEST-PASS" 判定语义不变（fail-loud）
+    _d10_tail = (r.stdout + r.stderr).strip().splitlines()[-1][:70] if (r.stdout + r.stderr).strip() else '(子进程无输出·exit=%s)' % r.returncode
+    check("D10 冻结面 selftest_mcp.py SELFTEST-PASS", "SELFTEST-PASS" in r.stdout, _d10_tail)
 
     print("\n%s · %d/%d 断言通过" % ("ORGAN-V3.1.1-SELFTEST-PASS" if not FAIL else "ORGAN-V3.1.1-SELFTEST-FAIL",
                                     len(PASS), len(PASS) + len(FAIL)))

@@ -113,7 +113,7 @@ CE_LIVE_W, CE_LOST_W = 0.5, 0.5   # v1.2 loss（λ·(0.5·ce_live＋0.5·ce_lost
 PIN_EXECUTOR = 'd2189f2c4f1e585e4f9774af7b9ee61c70adcfc5036690a89e5514aab7c51e9b'
 PIN_THERMO_CORE = 'f47d4ab7700c453362014aa53c99fd4893fa67bd05469491295578d848b5b26c'
 PIN_SELFTEST_P4 = '62cb86c40a805b5618584a0dc1bb843a7696bfb0d99c21fd87aaf136b8b8b336'   # 点火面钉定副本（P4·82/82）
-PIN_SELFTEST_REPO = '3b19207a52922680'   # 插件仓现件（A3 追认·D10 runner env 唯一 delta）——报告位非拒跑位
+PIN_SELFTEST_REPO = '4a0a51bb4dcce893'   # 插件仓现件（A3 追认·delta1＝D10 runner env；preview.12 delta2＝D10 判据 stdout 空回退 stderr 尾·防 IndexError——报告位非拒跑位）（3b19207a5292 为 delta1 前值·在册）
 PIN_R32 = 'ba7214640831f4fd6ee0261ba59216a317e33c19005cfbe846ecfb46af446e29'   # C 模式参照件（0 动·preflight 核）
 PIN_SLOT_CALC_V2 = '11e044d2145183df6c36c7d82c3e7ae3d19fd537583c23d57bcdd0f0297bdea9'
 CRITERIA_V12 = '9d10c2b3b4c577f7'   # v1.2 冻结件 sha256 前 16 位（v1.2.x 回填后 sha 变·版本位核 config_version 前缀·preflight 报告位非拒跑位）
@@ -1000,6 +1000,23 @@ def preflight(args, mode):
     s_tc = sha_file(tc.__file__)
     if s_tc != PIN_THERMO_CORE: raise DriverFail(EXIT_PREFLIGHT, '冻结面指纹漂移: thermo_core %s ≠ %s' % (s_tc[:16], PIN_THERMO_CORE[:16]))
     rep['pins'] = {'irreversible_executor.py': s_ix[:16], 'thermo_core.py': s_tc[:16]}
+    # 处置注·观察3改法①（preview.12）：mcp 面 14 件在位性＋版本敏感件 era 标注——D10 冻结面
+    # 须 preview.10（0e93cc1）版 mcp_server/thermo_cli（钉定自测 62cb86c40a80 不带 E-off env·
+    # 配执行器代面会 24/25）；缺件打 WARN 不阻断（arm 径只 import 执行器两件·P4 才须闭包）。
+    mcp_dir = os.path.dirname(os.path.abspath(tc.__file__))
+    s_srv = sha_file(os.path.join(mcp_dir, 'mcp_server.py')) if os.path.exists(os.path.join(mcp_dir, 'mcp_server.py')) else None
+    s_cli = sha_file(os.path.join(mcp_dir, 'thermo_cli.py')) if os.path.exists(os.path.join(mcp_dir, 'thermo_cli.py')) else None
+    rep['exec_dir_face'] = {'dir': mcp_dir,
+                            'n_files': len([f for f in os.listdir(mcp_dir) if f.endswith(('.py', '.txt'))]),
+                            'mcp_server': (s_srv[:16] if s_srv else 'missing'),
+                            'thermo_cli': (s_cli[:16] if s_cli else 'missing'),
+                            'mcp_server_era': ('preview.10(0e93cc1-face)' if s_srv and s_srv.startswith('8674018b0c9951af') else ('preview.11+(executor-era·D10 须 E-off)' if s_srv else 'missing')),
+                            'thermo_cli_era': ('preview.10(0e93cc1-face)' if s_cli and s_cli.startswith('771d730bda2cb306') else ('preview.11+' if s_cli else 'missing'))}
+    _d10_needs = ('selftest_mcp.py', 'thermo_core.py', 'phantom_limb.py', 'phantom_limb.zh.txt', 'phantom_limb.en.txt')
+    _d10_missing = [f for f in _d10_needs if not os.path.exists(os.path.join(mcp_dir, f))]
+    if _d10_missing:
+        sys.stderr.write('[WARN] exec_dir_face: D10 冻结面闭包缺件 %s——P4 自测不可跑（arm 径不受影响）\n' % _d10_missing)
+        rep['exec_dir_face']['d10_missing'] = _d10_missing
     v2 = args.slot_calc or os.path.join(here, 'horizon_slot_calc_v2.py')
     if os.path.exists(v2):
         s = sha_file(v2)
@@ -1012,7 +1029,7 @@ def preflight(args, mode):
     if os.path.exists(st):
         s = sha_file(st)
         if s == PIN_SELFTEST_P4: rep['selftest'] = {'path': st, 'sha12': s[:16], 'note': 'P4 钉定副本（82/82）'}
-        elif s.startswith(PIN_SELFTEST_REPO): rep['selftest'] = {'path': st, 'sha12': s[:16], 'note': '插件仓现件（A3 追认·D10 runner env 唯一 delta）——点火面 P4 须用钉定副本 62cb86c40a80'}
+        elif s.startswith(PIN_SELFTEST_REPO): rep['selftest'] = {'path': st, 'sha12': s[:16], 'note': '插件仓现件（A3 追认·preview.12 D10 判据修正）——点火面 P4 须用钉定副本 62cb86c40a80'}
         else: raise DriverFail(EXIT_PREFLIGHT, 'selftest_organ_v3.py 指纹漂移（非 P4 钉定值亦非仓现件）: %s' % s[:16])
     else: rep['selftest'] = None
     r32 = args.r32 or os.path.join(here, 'deepen_r32.py')
@@ -1036,6 +1053,14 @@ def preflight(args, mode):
         miss = [p for p in (MP, DP, CHARGEQ, R31CKPT if START_POINT == '甲' else R1CKPT) if not os.path.exists(p)]
         if miss: raise DriverFail(EXIT_PREFLIGHT, '训练资产缺位: %s' % miss)
         rep['assets_ok'] = True
+        try:   # 处置注·观察2改法①（preview.12）：「资产在位＋无 GPU」由 rc 10 → rc 3（真缺口·
+               # 守护 v6 前置已独立核 CUDA·链内被截停——此处补无守护手跑的诊断位·fail-loud 语义不变）
+            import torch
+            if not torch.cuda.is_available():
+                raise DriverFail(EXIT_PREFLIGHT, 'CUDA 不可用（arm/smoke 须 GPU 机·未装载模型·未起训练）')
+        except ImportError as e:
+            raise DriverFail(EXIT_PREFLIGHT, 'preflight：import torch 失败: %s' % e)
+        rep['cuda_ok'] = True
     c, csha = load_criteria(args.criteria)
     if mode == 'arm' and c is None: raise DriverFail(EXIT_CONFIG, 'arm 须给 --criteria（v1.2.x 冻结件·AC-03/AC-14）')
     rep['criteria'] = ({'path': args.criteria, 'sha12': csha, 'sha16': sha_file(args.criteria)[:16], 'config_version': c.get('config_version'), 'horizon_value': criteria_horizon(c),

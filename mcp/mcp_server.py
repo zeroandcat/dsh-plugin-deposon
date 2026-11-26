@@ -20,10 +20,17 @@
 #   - 幻肢行形态 K-out 一般形（键位＝查询前缀·非存储键）/K-in 单写者特例（四条件门）
 #   - 否证探针 attempt_inverse：回流反解器存在 ⇒ TheoryFalsified（可执行的理论否证条件）
 #   - 消融开关 DEPOSON_EXECUTOR=0 → 回 preview.10 现役 ThermoLedger（实验线 E-off 臂）
-# 依赖   : Python 3.7+ 标准库·执行器代加 cryptography（AES-GCM）·0 网络调用
+# era 握手代新增（preview.12 · I-3/I-4 服务端半）:
+#   - initialize 响应自报 era（"executor"|"preview.10"）＋执行器配置 digest（16 hex·I-3）
+#     ——驱动器/自测件声明期望 era·不等 fail-loud（防臂串线·静默降级禁止）
+#   - irreversible_executor 改 lazy import：E-off 面 0 第三方依赖（缺 cryptography 不再
+#     阻断四工具）·执行器态缺包 stderr 明示 exit 3（I-4·不自动降级）
+#   - _exec_cfg 提取共享（executor_config.exec_cfg·thermo_cli 同源·I-3b 消 #10 口径差）
+# 依赖   : Python 3.7+ 标准库·执行器代加 cryptography（AES-GCM·I-4 lazy·仅执行器面硬依赖·E-off 面 0 第三方依赖）·0 网络调用
 # 传输层 : 响应输出 ensure_ascii=True（纯 ASCII·locale 无关）
 #           兼容宿主将 notifications/initialized 也携带 id 的实现（带 id 一律响应）
 # ============================================================================
+import hashlib
 import os, sys, json, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -31,7 +38,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import thermo_core as tc
-import irreversible_executor as ix
+from executor_config import exec_cfg as _exec_cfg  # I-3b：执行器层参数共享面（thermo_cli 同源）
 from phantom_limb import phantom_limb_prompt
 
 SERVER_NAME = "condensate-field-mcp"
@@ -53,23 +60,28 @@ EXECUTOR_ON = os.environ.get("DEPOSON_EXECUTOR", "1") not in ("0", "false", "no"
 # 不碰撞——selftest_mcp 段零直调账本与 stdio 账本同 tmpd·共享目录级 pool 会 I2 误伤）
 POOL_PATH = os.environ.get("DEPOSON_POOL") or (LEDGER_PATH + ".pool")
 
-def _exec_cfg():
-    """执行器层参数：数值面沿 DEPOSON_THERMO（tc.load_cfg·冻结面）＋执行器层键沿
-    DEPOSON_G_POLICY/DEPOSON_Q_REF/DEPOSON_MASS_BUCKET/DEPOSON_PHANTOM_FORM/
-    DEPOSON_KIN_SCOPE/DEPOSON_ADDR_SCHEMA/DEPOSON_PRINCIPAL（D17/D23/D24·env override wins）。"""
-    c = dict(CFG)
-    c["g_policy"] = os.environ.get("DEPOSON_G_POLICY", "p1")
-    c["phantom_form"] = os.environ.get("DEPOSON_PHANTOM_FORM", "kout")
-    c["kin_scope"] = os.environ.get("DEPOSON_KIN_SCOPE", "multi")
-    c["addr_schema"] = os.environ.get("DEPOSON_ADDR_SCHEMA", "1") not in ("0", "false", "no")
-    c["mass_bucket"] = os.environ.get("DEPOSON_MASS_BUCKET", "0") in ("1", "true", "yes")
-    q_ref = os.environ.get("DEPOSON_Q_REF")
-    if q_ref:
-        c["Q_ref"] = max(1, int(q_ref))
-    principal = os.environ.get("DEPOSON_PRINCIPAL")
-    if principal:
-        c["principal"] = principal
-    return c
+# ---- I-4 依赖探测（服务端半·preview.12）----
+# preview.11 缺陷（推进件 #9）：irreversible_executor 顶层无条件 import ⇒ cryptography
+# 硬依赖外溢到 E-off 面（缺包时 import mcp_server 即死·四工具全不可用）。改 lazy：
+# 仅执行器面（EXECUTOR_ON）装载时 import；缺 cryptography ⇒ stderr 明示 fail-loud exit 3
+# （不自动降级——静默降级＝实验线口径被偷换）。E-off 面 0 第三方依赖（preview.10 原状）。
+if EXECUTOR_ON:
+    try:
+        import irreversible_executor as ix
+    except ImportError as e:
+        sys.stderr.write("[condensate-field-mcp] FATAL: 执行器硬依赖 cryptography 缺失（%s）——"
+                         "安装 cryptography>=41，或设 DEPOSON_EXECUTOR=0 回 preview.10 账面"
+                         "（明示失败·不自动降级）\n" % e)
+        sys.stderr.flush()
+        sys.exit(3)
+else:
+    class _NoExecutorBreach(Exception):
+        """E-off 态占位：账本面无执行器崩窗可言（_footer 的 except 求值须有 ix 名）"""
+
+    class _IxStub:  # noqa: E302
+        ExecutorBreach = _NoExecutorBreach
+
+    ix = _IxStub()  # 占位类永不抛出·匹配永不命中·0 行为差
 
 LEDGER = ix.IrreversibleLedger(LEDGER_PATH, POOL_PATH, _exec_cfg()) if EXECUTOR_ON \
     else tc.ThermoLedger(LEDGER_PATH, CFG)
@@ -166,12 +178,19 @@ def handle(req):
     rid = req.get("id")
     params = req.get("params") or {}
     if method == "initialize":
-        return {"jsonrpc": "2.0", "id": rid, "result": {
+        result = {
             "protocolVersion": PROTOCOL_VERSION,
             "capabilities": {"tools": {}},
             "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
+            # I-3 era 握手（服务端半·preview.12）：账本时代自报——驱动器/自测件声明期望
+            # era，不等即 fail-loud（不静默降级＝防臂串线）；E-off 自报 preview.10。
+            "era": "executor" if EXECUTOR_ON else "preview.10",
             # 幻肢注入面：MCP instructions（协议 2025-03-26 起宿主注入系统提示；旧宿主忽略）
-            "instructions": phantom_limb_prompt()}}
+            "instructions": phantom_limb_prompt()}
+        if EXECUTOR_ON:  # I-3：执行器配置 digest（cfg 指纹 16 hex·驱动器/宿主对表位）
+            result["executorConfigDigest"] = hashlib.sha256(
+                json.dumps(_exec_cfg(), sort_keys=True, ensure_ascii=True).encode()).hexdigest()[:16]
+        return {"jsonrpc": "2.0", "id": rid, "result": result}
     if method == "notifications/initialized":
         return {"jsonrpc": "2.0", "id": rid, "result": {}}
     if method == "ping":

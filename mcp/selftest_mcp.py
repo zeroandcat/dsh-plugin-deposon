@@ -285,13 +285,58 @@ def main():
         check("7-幻肢注入面", "幻肢" in ins and "活水记忆层" in ins and "自解帐本" in ins and not leak,
               "initialize.instructions 携信念块（%d 字）·记忆数据回注 %d 条（催眠红线）" % (len(ins), len(leak)))
         h5.kill()
+
+        # ---------- 段八 · I-3 era 握手 ＋ I-4 依赖探测（服务端半·preview.12） ----------
+        # 两 Host 均显式设 DEPOSON_EXECUTOR（不继承进程态——本段须在 E-off 冻结面全跑下同样成立）
+        h6 = Host(os.path.join(tmpd, "era_ledger.jsonl"), {"DEPOSON_EXECUTOR": "1"})
+        ini = h6.rpc("initialize", {"protocolVersion": "2024-11-05", "capabilities": {}}).get("result", {})
+        dg = ini.get("executorConfigDigest", "")
+        check("8-era握手(on)", ini.get("era") == "executor" and len(dg) == 16
+              and all(c in "0123456789abcdef" for c in dg),
+              "执行器态自报 era=executor·配置 digest 16 hex（I-3·对表位）")
+        h6.call("deposon_memory_write", {"key": "era.probe", "text": "纪元探针"})
+        h6.kill()
+        h7 = Host(os.path.join(tmpd, "era_eoff_ledger.jsonl"), {"DEPOSON_EXECUTOR": "0"})
+        ini0 = h7.rpc("initialize", {"protocolVersion": "2024-11-05", "capabilities": {}}).get("result", {})
+        h7.call("deposon_memory_write", {"key": "era.eoff", "text": "离面探针"})
+        t_e = h7.call("deposon_memory_read", {"prefix": "era."})
+        check("8-era握手(off)", ini0.get("era") == "preview.10" and "era.eoff" in t_e
+              and "离面探针" in t_e and "executorConfigDigest" not in ini0,
+              "E-off 自报 era=preview.10·无 digest·明文面 write/read 正常（I-4 E-off 全功能）")
+        h7.kill()
+        h8 = Host(os.path.join(tmpd, "era_ledger.jsonl"), {"DEPOSON_EXECUTOR": "0"})  # 跨代读
+        x_e = h8.raw("deposon_memory_read", {"prefix": "era."})  # E-off 读执行器账本 ⇒ fail-loud
+        x_e_txt = x_e.get("content", [{}])[0].get("text", "")
+        check("8-跨代fail-loud", bool(x_e.get("isError")) and "账本不自洽" in x_e_txt,
+              "E-off 读执行器账本 ⇒ fail-loud（时代分离是设计·R-4 era·0 静默混代）")
+        h8.kill()
+        # I-4 lazy-import 证据：E-off 模块装载后 irreversible_executor 不入 sys.modules
+        probe = subprocess.run(
+            [sys.executable, "-c",
+             "import sys, os; sys.path.insert(0, %r); os.environ['DEPOSON_EXECUTOR']='0';"
+             "import mcp_server; print('LAZY-OK' if 'irreversible_executor' not in sys.modules"
+             " else 'EXEC-LOADED')" % (HERE,)],
+            capture_output=True, text=True, timeout=60,
+            env={**os.environ, "CONDENSATE_LEDGER": os.path.join(tmpd, "lazy.jsonl")})
+        check("8-lazy-import(E-off)", probe.returncode == 0 and "LAZY-OK" in probe.stdout,
+              "E-off 装载不触执行器模块（cryptography 非 E-off 依赖·I-4）")
+        # I-4 缺包 fail-loud：屏蔽 cryptography ＋ 执行器态 ⇒ stderr 明示＋exit 3（不自动降级）
+        blocked = subprocess.run(
+            [sys.executable, "-c",
+             "import sys; sys.modules['cryptography']=None; sys.path.insert(0, %r);"
+             "import mcp_server" % (HERE,)],
+            capture_output=True, text=True, timeout=60,
+            env={**os.environ, "DEPOSON_EXECUTOR": "1",
+                 "CONDENSATE_LEDGER": os.path.join(tmpd, "blk.jsonl")})
+        check("8-缺包fail-loud", blocked.returncode == 3 and "cryptography" in blocked.stderr,
+              "执行器态缺 cryptography ⇒ stderr 明示＋exit 3（明示失败·不静默降级）")
     finally:
         for x in _HOSTS:
             x.kill()
         shutil.rmtree(tmpd, ignore_errors=True)  # 测试账本即用即弃·0 残留
 
     verdict = "SELFTEST-PASS" if all(results) else "SELFTEST-FAIL"
-    print("\n段零本体直调＋三段自测＋换模不丢强证明＋热力学段（五/六/七）：%s · %d/%d 断言 · %.1fs · 0 网络 0 计费"
+    print("\n段零本体直调＋三段自测＋换模不丢强证明＋热力学段（五/六/七）＋era握手/依赖探测段（八）：%s · %d/%d 断言 · %.1fs · 0 网络 0 计费"
           % (verdict, sum(results), len(results), time.time() - t0))
     return 0 if all(results) else 1
 

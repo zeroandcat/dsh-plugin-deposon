@@ -44,7 +44,7 @@
   },
   "engines": {
     "node": ">=22",
-    "dsh": ">=0.1.0"
+    "dsh": ">=0.1.0 <0.2.0"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*"
@@ -64,5 +64,12 @@
   "homepage": "https://github.com/zeroandcat/dsh-plugin-deposon#readme",
   "bin": {
     "deposon-quickcheck": "scripts/quickcheck.mjs"
+  },
+  "scripts": {
+    "quickcheck": "node scripts/quickcheck.mjs",
+    "dsh:plan": "node plugin/update.mjs plan",
+    "dsh:selfcheck": "node plugin/update.mjs selfcheck",
+    "dsh:upgrade": "node plugin/update.mjs apply",
+    "dsh:rollback": "node plugin/update.mjs rollback"
   }
 }

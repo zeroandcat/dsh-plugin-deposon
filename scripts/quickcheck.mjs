@@ -26,8 +26,8 @@ const steps = [
   ["slot-space caliber Lean mirror cross-check", PY, ["gates/slot_space_crosscheck.py"]],
   ["f3 judge calibration face", PY, ["gates/descrev_calibration.py"]],
   ["readings-package completeness validator", PY, ["gates/readout_completeness.py"]],
-  ["memory harness MCP self-test (stdio; preview.10 thermo segments)", PY, ["mcp/selftest_mcp.py"]],
-  ["ledger dual-implementation cross-check", PY, ["mcp/ledger_crosscheck.py"]],
+  ["memory harness MCP self-test (stdio; preview.10 thermo segments)", PY, ["mcp/selftest_mcp.py"], false, { DEPOSON_EXECUTOR: "0" }],  // E-off pin (frozen-era semantics; 5efc158 pinned ci.yml but missed quickcheck)
+  ["ledger dual-implementation cross-check", PY, ["mcp/ledger_crosscheck.py"], false, { DEPOSON_EXECUTOR: "0" }],  // E-off pin (frozen-era file; corrupt-row test raises LedgerInconsistent, not ExecutorBreach)
   ["thermo ledger Lean<->Python cross-check (preview.10)", PY, ["mcp/thermo_crosscheck.py"]],
   ["thermo before/after frozen readings (preview.10, --check)", PY, ["mcp/thermo_demo.py", "--check"], true],
   ["DeposonThermo.lean axiom audit (static; compiles if lean on PATH)", PY, ["harness/lean_axiom_audit.py"], true],
@@ -35,9 +35,10 @@ const steps = [
 ];
 
 let failed = 0;
-for (const [name, cmd, args, hideStdout] of steps) {
+for (const [name, cmd, args, hideStdout, envOverride] of steps) {
+  const stepsMeta = envOverride;
   const t0 = Date.now();
-  const r = spawnSync(cmd, args, { encoding: "utf8", env: process.env, cwd: root });
+  const r = spawnSync(cmd, args, { encoding: "utf8", env: { ...process.env, ...(stepsMeta ?? {}) }, cwd: root });
   const ok = r.status === 0;
   if (!ok) failed += 1;
   const tail = (r.stdout + "\n" + r.stderr).trim().split("\n").filter(Boolean);

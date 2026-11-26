@@ -146,6 +146,38 @@ self-test).
 > and config consumption here are the stable surface; agent-tool registration
 > probes known API shapes defensively.
 
+## Update / upgrade (deepseek-harness contract, preview.12)
+
+The plugin follows the dsh plugin contract for update/upgrade along four pillars:
+
+- **Version**: `package.json` is the single version source — the MCP `clientInfo`
+  handshake and the update tooling read it (no hand-written version strings).
+- **Dependency**: `engines.node >=22` and `engines.dsh >=0.1.0 <0.2.0` (dsh is a
+  developer preview with announced breaking changes, so the range is capped);
+  `cryptography>=41` is a hard requirement **only for the executor face** — since
+  preview.12 the E-off face is stdlib-only (lazy executor import, missing
+  dependency fail-louds with an explicit message, no silent downgrade).
+- **Config**: bundle-patch config keys and `DEPOSON_*` env are additive-only
+  across releases. Ledger data is **never migrated in place** (append-only;
+  era separation is by design — an executor-era ledger read on the preview.10
+  face fail-louds, and vice versa).
+- **Rollback**: `apply` snapshots the code face to `.deposon-rollback/<ts>/`
+  before touching anything and auto-restores it if the post-install selfcheck
+  fails. `ledger.jsonl` / `*.pool` / `~/.deposon` live outside the snapshot by
+  construction — data is never rolled back.
+
+```bash
+node plugin/update.mjs selfcheck                 # dependency pillar (read-only)
+node plugin/update.mjs plan [--src <path>] [--ledger <p>]   # plan JSON, exit 0|2
+node plugin/update.mjs apply --src path:<local-tree>        # snapshot → install → selfcheck → (auto-rollback on fail)
+node plugin/update.mjs rollback                  # restore the latest code-face snapshot
+# remote sources (git/npm) print the host command sequence (dsh plugin add = re-install = upgrade)
+```
+
+Era handshake (preview.12): the MCP `initialize` response self-reports
+`era` (`"executor" | "preview.10"`) plus an `executorConfigDigest`; drivers and
+selftests declare an expected era and fail loud on mismatch (anti arm-crosstalk).
+
 ## Quickstart (recompute)
 
 ```bash

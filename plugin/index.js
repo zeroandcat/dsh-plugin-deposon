@@ -10,7 +10,7 @@
 // changes. Tool-registration APIs are probed defensively across known shapes;
 // the Cordis `apply` contract and config consumption are the stable surface.
 
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs'
 import os from 'node:os'
 import { fileURLToPath } from 'node:url'
@@ -38,6 +38,10 @@ Configuration (via cordis.patch.yml config or DEPOSON_* env):
 - footer: thermodynamic footer on write/read receipts (default true, env DEPOSON_THERMO_FOOTER)
 - thermo: thermodynamic parameters as a JSON string (env DEPOSON_THERMO)
 - toolTimeoutMs: per MCP request timeout in ms (default 60000, env DEPOSON_TOOL_TIMEOUT_MS)
+Update/upgrade (preview.12, deepseek-harness contract):
+- node plugin/update.mjs selfcheck | plan | apply --src <path|url> | rollback
+  (version/dependency/config/rollback-plane checks; ledger data is never migrated
+  in place — append-only, era-separated by design)
 `.trim()
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -52,6 +56,10 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 // static THERMO_TOOLS mirror of the server's TOOLS_SPEC is kept in parity by
 // tests/test_plugin_load.mjs (live tools/list deep-equal).
 // ---------------------------------------------------------------------------
+// Version self-report (preview.12): read package.json — the MCP clientInfo and the
+// update/upgrade path must never carry a hand-written version string (drift = lie).
+const PKG_VERSION = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version
+
 const MCP_SERVER = path.join(ROOT, 'mcp', 'mcp_server.py')
 const THERMO_CLI = path.join(ROOT, 'mcp', 'thermo_cli.py')
 const MCP_PROTOCOL = '2024-11-05'
@@ -163,11 +171,14 @@ class McpStdio {
       child.on('error', (e) => this._fail(new Error(`deposon mcp spawn failed: ${e?.message ?? e}`)))
       child.on('exit', (code, signal) =>
         this._fail(new Error(`deposon mcp server exited (code=${code}, signal=${signal})`)))
-      await this.request('initialize', {
+      const init = await this.request('initialize', {
         protocolVersion: MCP_PROTOCOL,
         capabilities: {},
-        clientInfo: { name: 'dsh-plugin-deposon', version: '0.1.0-preview.10' },
+        clientInfo: { name: 'dsh-plugin-deposon', version: PKG_VERSION },
       })
+      // I-3 era handshake: the server self-reports its ledger era; kept on the client
+      // handle so hosts/tests can assert it (executor | preview.10).
+      this.era = init?.era ?? null
       this.notify('notifications/initialized')
     })()
     try {
@@ -450,6 +461,24 @@ function makeThermoFace(ctx, config, base) {
     }
   } catch (e) {
     ctx?.logger?.warn?.(`deposon: thermo command registration skipped: ${e?.message ?? e}`)
+  }
+
+  // I-4 host-side dependency probe (preview.12): when the executor face is on, the
+  // MCP server hard-requires cryptography. The server itself fail-louds (stderr +
+  // exit 3, no silent downgrade); this probe surfaces the cause at mount time so the
+  // operator sees "missing dependency" instead of a bare tool error. Diagnostic only —
+  // no automatic downgrade (flipping executor=false here would silently change the
+  // experiment's account semantics, which is forbidden).
+  if (executorOn) {
+    try {
+      const probe = spawnSync(base.python, ['-c', 'import cryptography'], { stdio: 'ignore' })
+      if (probe.status !== 0) {
+        ctx?.logger?.warn?.(
+          'deposon: 执行器硬依赖 cryptography 缺失（python -c "import cryptography" 失败）——' +
+          'memory 工具调用将明示失败（mcp_server exit 3）。安装 cryptography>=41 或显式设 ' +
+          'DEPOSON_EXECUTOR=0 回 preview.10 账面（不自动降级）。')
+      }
+    } catch { /* probe must never break plugin load */ }
   }
 
   // Prime the counts-only brief once the harness is up; stop the child on dispose.
