@@ -39,6 +39,8 @@ dsh plugin add path:./dsh-plugin-deposon
 
 **热力学面（preview.10）**：同一 bundle entry 托管记忆器官——活水工具 `deposon_memory_write` / `deposon_memory_read`、自解结算 `deposon_thermo_audit`（只读）与 `deposon_thermo_settle`（`close=true`＝单元终核·U→0）经 stdio JSON-RPC 转发到 `mcp/mcp_server.py`（惰性拉起一个子进程·退出后自动重拉）；幻肢信念块（`mcp/phantom_limb.zh.txt` / `.en.txt`·只述协议·0 记忆数据）注入为系统提示段·仅含计数的幻肢感一行（在场行/幻肢数）作为运行时上下文；`/deposon-belief` 打印信念块·`/deposon-thermo-audit` 跑审计。每条写/读回执带热力学脚注（Φ/R/D/U·耗散通道利用率）。配置键：`ledger`（缺省 `~/.deposon/ledger.jsonl`·换模不丢）、`lang`（`zh|en|both`）、`belief`、`brief`、`footer`、`thermo`（JSON 参数覆盖）、`toolTimeoutMs`；环境变量 `DEPOSON_LEDGER`、`DEPOSON_PL_LANG`、`DEPOSON_BELIEF`、`DEPOSON_THERMO_BRIEF`、`DEPOSON_THERMO_FOOTER`、`DEPOSON_THERMO`、`DEPOSON_TOOL_TIMEOUT_MS`。gate_check 面 0 改动。
 
+**执行器代（preview.11 缺省开）**：写/读经 `mcp/irreversible_executor.py`（v3.1.1 器官）——注入行盘上只有 AES-256-GCM 密文（每行随机 DEK·DEK 只活在在场池 `pool`）·散失＝销毁 DEK（密码学擦除）＋追加哈希链墓碑（tamper-evident）·g_aether 累积器只进不出只存统计（背景场偏置·非本体）·幻肢行缺省 K-out 形（行键＝查询前缀·非存储键）·否证探针 `attempt_inverse` 在位（回流反解器存在 ⇒ TheoryFalsified）。配置键：`executor`（缺省 `true`·`false`＝回 preview.10 账面·实验线消融臂）、`pool`、`gPolicy`（`p1|off`）、`qRef`、`massBucket`、`phantomForm`（`kout|kin`）、`kinScope`（`multi|single-writer`）、`addrSchema`、`principal`；环境变量 `DEPOSON_EXECUTOR`、`DEPOSON_POOL`、`DEPOSON_G_POLICY`、`DEPOSON_Q_REF`、`DEPOSON_MASS_BUCKET`、`DEPOSON_PHANTOM_FORM`、`DEPOSON_KIN_SCOPE`、`DEPOSON_ADDR_SCHEMA`、`DEPOSON_PRINCIPAL`。C1 树级守卫 `scripts/c1_no_vector_archive_audit.py` 入 CI（ether_archive 伪反解器必删位·K8 裁定·详见 `docs/thermo-generation.md` §12）。
+
 案头安装验证（除 GitHub 外 0 网络）：`npm pack --dry-run`（打包完整性）·
 `git ls-remote`（dsh 插件管理器安装前置的同款可达性检查）·
 `node tests/test_plugin_load.mjs`（在带 dsh 原生 `ctx.tools.register` / `ctx.systemPrompt` 注册表的 mock Cordis context 上加载插件·对活体 MCP `tools/list` 核工具 schema 齐平·真实调用工具体——34 项断言·含写→读→审计→终核→幻肢的真实账本回环与门算术自检）。
@@ -71,7 +73,7 @@ python harness/lean_axiom_audit.py
 
 ## 目录
 
-`harness/` 发射器家族（env 参数化）＋`NingziContainer.lean`（凝子场容器·Lean 4 形式化·core-only）＋`DeposonThermo.lean`（热力学账本守恒·15 定理·逐定理 `#print axioms`·`lean_axiom_audit.py` 审计编译日志）｜`mcp/` 记忆 harness 本体独立实例（外置追加账本＋DR-4 渲染面＋热力学层 `thermo_core.py`：四账㶲·门·幻肢·自解结算＋读写/审计/结算四工具面＋幻肢信念块 `phantom_limb.*.txt`＋`thermo_cli.py`＋改造前后对照 `thermo_demo.py`＋自检与交叉核·入 CI）｜`plugin/` dsh 插件入口（Cordis `apply`：gate-check 面＋热力学面——托管 MCP 服务器·`ctx.tools` 注册四工具·`ctx.systemPrompt` 注入信念块）｜
+`harness/` 发射器家族（env 参数化）＋`NingziContainer.lean`（凝子场容器·Lean 4 形式化·core-only）＋`DeposonThermo.lean`（热力学账本守恒·15 定理·逐定理 `#print axioms`·`lean_axiom_audit.py` 审计编译日志）＋`IrreversibleDeposon.lean`（不可逆执行器镜像·58 定理·E1/E3/E4/E5＋G1-G4 累积器·0 sorry）＋`DeposonThermoRecon.lean`（热力学重构件·三层＝定义/公设/定理·32 条目·0 sorry）｜`mcp/` 记忆 harness 本体独立实例（外置追加账本＋DR-4 渲染面＋热力学层 `thermo_core.py`：四账㶲·门·幻肢·自解结算＋读写/审计/结算四工具面＋**不可逆执行器** `irreversible_executor.py`（preview.11 缺省后端：AES-256-GCM 密文落盘·DEK 在场池·散失＝密码学擦除＋哈希链墓碑·否证探针在位）＋幻肢信念块 `phantom_limb.*.txt`＋`thermo_cli.py`＋改造前后对照 `thermo_demo.py`＋自检与交叉核·入 CI）｜`plugin/` dsh 插件入口（Cordis `apply`：gate-check 面＋热力学面——托管 MCP 服务器·`ctx.tools` 注册四工具·`ctx.systemPrompt` 注入信念块）｜
 `frozen/` 冻结面（盲化 K_h 映射·种子）｜
 `gates/` 门规范双实现（含判死线 v1.1 三接口：量具判别/全量原文义务/三层带裁决·preview.5 判官严格度门＋六族链接核＋preview.7 slot 空间口径门·preview.8 六族全链接）｜
 `cordis.patch.yml` dsh bundle 声明（插件管理器消费的 profile patch）｜

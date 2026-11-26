@@ -27,5 +27,28 @@
         footer: !!js process.env.DEPOSON_THERMO_FOOTER ?? true
         # Thermodynamic parameters override as a JSON string (defaults: mcp/thermo_core.load_cfg).
         thermo: !!js process.env.DEPOSON_THERMO ?? null
+        # ---- executor face (preview.11: irreversible executor · v3.1.1 organ) ----
+        # Route write/read through the irreversible executor (AES-256-GCM ciphertext on
+        # disk, DEKs only in the pool, dissipation = cryptographic erasure + tombstone
+        # chain). false -> preview.10 ledger face (plaintext JSONL; ablation arm E-off).
+        executor: !!js process.env.DEPOSON_EXECUTOR ?? true
+        # In-field pool (DEK keystore) path. null -> env DEPOSON_POOL -> <ledger>.pool
+        # (one pool per ledger, same lifecycle). Same rule in mcp_server.py/thermo_cli.py.
+        pool: !!js process.env.DEPOSON_POOL ?? null
+        # g_aether readback policy: 'p1' (budget gate, default) | 'off' (ablation, falsifiable).
+        gPolicy: !!js process.env.DEPOSON_G_POLICY ?? 'p1'
+        # Readback budget reference Q_ref; 0/null = follow the parameter face Q.
+        qRef: !!js Number(process.env.DEPOSON_Q_REF ?? 0)
+        # Bucket persisted phantom mass records (policy-layer; accounting unchanged).
+        massBucket: !!js process.env.DEPOSON_MASS_BUCKET ?? false
+        # Phantom row form: 'kout' (general form; row key = query prefix, never the
+        # stored key) | 'kin' (single-writer special case; four-condition gate D24).
+        phantomForm: !!js process.env.DEPOSON_PHANTOM_FORM ?? 'kout'
+        # K-in scope: 'multi' (default; K-in denied -> falls back to K-out) | 'single-writer'.
+        kinScope: !!js process.env.DEPOSON_KIN_SCOPE ?? 'multi'
+        # Σ address schema check at the write entry (fail-loud; dot-identifiers, no '/').
+        addrSchema: !!js process.env.DEPOSON_ADDR_SCHEMA ?? true
+        # Principal namespace partition (null = single shared namespace).
+        principal: !!js process.env.DEPOSON_PRINCIPAL ?? null
         # Per MCP request timeout in milliseconds.
         toolTimeoutMs: !!js Number(process.env.DEPOSON_TOOL_TIMEOUT_MS ?? 60000)

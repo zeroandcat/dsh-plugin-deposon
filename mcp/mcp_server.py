@@ -14,7 +14,13 @@
 #   - 衰减/容量/视界/覆盖/终核五路散热·散失留幻肢（空穴·可感不可复原）
 #   - 自解帐本：守恒核 E⁰=Φ+R+D+U 逐位自检·结算＝事件流重放（0 外部对账）
 #   - 幻肢注入面（mcp/phantom_limb.py）：initialize.instructions＋工具描述＋脚注
-# 依赖   : Python 3.7+ 标准库·0 第三方依赖·0 网络调用
+# 执行器代新增（preview.11 · mcp/irreversible_executor.py 本体·v3.1.1）:
+#   - 写入经执行器：AES-256-GCM 密文落盘·DEK 只活在在场池·散失＝销毁 DEK（密码学擦除）
+#   - 散失留哈希链墓碑（tamper-evident）＋g_aether 累积器（只进不出·只存统计不存内容）
+#   - 幻肢行形态 K-out 一般形（键位＝查询前缀·非存储键）/K-in 单写者特例（四条件门）
+#   - 否证探针 attempt_inverse：回流反解器存在 ⇒ TheoryFalsified（可执行的理论否证条件）
+#   - 消融开关 DEPOSON_EXECUTOR=0 → 回 preview.10 现役 ThermoLedger（实验线 E-off 臂）
+# 依赖   : Python 3.7+ 标准库·执行器代加 cryptography（AES-GCM）·0 网络调用
 # 传输层 : 响应输出 ensure_ascii=True（纯 ASCII·locale 无关）
 #           兼容宿主将 notifications/initialized 也携带 id 的实现（带 id 一律响应）
 # ============================================================================
@@ -25,6 +31,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import thermo_core as tc
+import irreversible_executor as ix
 from phantom_limb import phantom_limb_prompt
 
 SERVER_NAME = "condensate-field-mcp"
@@ -38,7 +45,34 @@ TOOL_SETTLE = "deposon_thermo_settle"
 # 账本位：默认实例同目录 ledger.jsonl；CONDENSATE_LEDGER 可覆盖（自检/实践隔离位）
 LEDGER_PATH = os.environ.get("CONDENSATE_LEDGER") or os.path.join(HERE, "ledger.jsonl")
 CFG = tc.load_cfg()
-LEDGER = tc.ThermoLedger(LEDGER_PATH, CFG)
+# ---- 执行器代（v3 落地序 §6.2·唯一触及后端选择处）----
+# 缺省经执行器（密文落盘·DEK 在场池·散失＝密码学擦除）；DEPOSON_EXECUTOR=0 回现役
+# ThermoLedger（preview.10 账面·明文 JSONL·实验线 E-off 臂·D10）。
+EXECUTOR_ON = os.environ.get("DEPOSON_EXECUTOR", "1") not in ("0", "false", "no")
+# 池位与账本同生命周期·一账一池：DEPOSON_POOL > <账本路径>.pool（后缀位·多账本同目录
+# 不碰撞——selftest_mcp 段零直调账本与 stdio 账本同 tmpd·共享目录级 pool 会 I2 误伤）
+POOL_PATH = os.environ.get("DEPOSON_POOL") or (LEDGER_PATH + ".pool")
+
+def _exec_cfg():
+    """执行器层参数：数值面沿 DEPOSON_THERMO（tc.load_cfg·冻结面）＋执行器层键沿
+    DEPOSON_G_POLICY/DEPOSON_Q_REF/DEPOSON_MASS_BUCKET/DEPOSON_PHANTOM_FORM/
+    DEPOSON_KIN_SCOPE/DEPOSON_ADDR_SCHEMA/DEPOSON_PRINCIPAL（D17/D23/D24·env override wins）。"""
+    c = dict(CFG)
+    c["g_policy"] = os.environ.get("DEPOSON_G_POLICY", "p1")
+    c["phantom_form"] = os.environ.get("DEPOSON_PHANTOM_FORM", "kout")
+    c["kin_scope"] = os.environ.get("DEPOSON_KIN_SCOPE", "multi")
+    c["addr_schema"] = os.environ.get("DEPOSON_ADDR_SCHEMA", "1") not in ("0", "false", "no")
+    c["mass_bucket"] = os.environ.get("DEPOSON_MASS_BUCKET", "0") in ("1", "true", "yes")
+    q_ref = os.environ.get("DEPOSON_Q_REF")
+    if q_ref:
+        c["Q_ref"] = max(1, int(q_ref))
+    principal = os.environ.get("DEPOSON_PRINCIPAL")
+    if principal:
+        c["principal"] = principal
+    return c
+
+LEDGER = ix.IrreversibleLedger(LEDGER_PATH, POOL_PATH, _exec_cfg()) if EXECUTOR_ON \
+    else tc.ThermoLedger(LEDGER_PATH, CFG)
 FOOTER = os.environ.get("DEPOSON_THERMO_FOOTER", "1") not in ("0", "false", "no")
 
 TOOLS_SPEC = [
@@ -59,7 +93,8 @@ TOOLS_SPEC = [
         "name": TOOL_READ,
         "description": "凝子场检索：按键前缀回读活水记忆·返回渲染位文本（每行『key: text』）。"
                        "门只透射最相关的至多 k 条（其余被拒＝熵输出·自付㶲散失）；已散失的记忆以"
-                       "『⟨幻肢⟩』行回射（可感不可复原）。0 原始账本注入（DR-4）。回执带热力学脚注。",
+                       "『⟨幻肢⟩』行回射（可感不可复原）。幻肢行键位＝查询前缀（非存储键·K-out 一般形）。"
+                       "0 原始账本注入（DR-4）。回执带热力学脚注。",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -123,6 +158,8 @@ def _footer():
         return tc.footer_text(LEDGER.state())
     except tc.LedgerInconsistent as e:
         return "— deposon 活水记忆 · 账本不自洽（%s）" % e
+    except ix.ExecutorBreach as e:  # D16：执行器崩窗——脚注如实降级·不假装自洽
+        return "— deposon 活水记忆 · 执行器崩窗（%s）" % e
 
 def handle(req):
     method = req.get("method")
@@ -149,7 +186,10 @@ def handle(req):
                 written, err = write_entry(args.get("key"), args.get("text"))
                 if err:
                     return tool_result(rid, err, True)
-                return tool_result(rid, "written: %s" % written, footer=_footer())
+                body = "written: %s" % written
+                if EXECUTOR_ON:
+                    body += "\n· 执行器已凝华（密文落盘·钥在场）"  # v3 D1：回执加一行（0 记忆数据）
+                return tool_result(rid, body, footer=_footer())
             if name == TOOL_READ:
                 hits, err = read_entries(args.get("prefix", ""), args.get("k"))
                 if err:
@@ -160,6 +200,9 @@ def handle(req):
                 rep, err = thermo_audit()
                 if err:
                     return tool_result(rid, err, True)
+                if isinstance(rep, dict) and rep.get("verdict") == "EXECUTOR-BREACH":
+                    # D16：崩窗降级审计——如实透传·isError=true（不假装自洽·pending_erase 在列）
+                    return tool_result(rid, json.dumps(rep, ensure_ascii=False, sort_keys=True), True)
                 if args.get("format") == "json":
                     return tool_result(rid, json.dumps(rep, ensure_ascii=False, sort_keys=True))
                 return tool_result(rid, tc.audit_text(rep))

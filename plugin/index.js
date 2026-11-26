@@ -337,6 +337,17 @@ function makeThermoFace(ctx, config, base) {
   const footerOn = flagOn(config.footer ?? env.DEPOSON_THERMO_FOOTER, true)
   const thermo = config.thermo ?? env.DEPOSON_THERMO ?? null
   const timeoutMs = Number(config.toolTimeoutMs ?? env.DEPOSON_TOOL_TIMEOUT_MS ?? 60000)
+  // ---- 执行器代（preview.11·v3 落地序 §6.3＋v3.1 D17＋v3.1.1 D23/D24）----
+  // executor=false ⇒ preview.10 账面（明文 JSONL·实验线 E-off 臂）；pool＝在场池（DEK keystore）。
+  const executorOn = flagOn(config.executor ?? env.DEPOSON_EXECUTOR, true)
+  const pool = config.pool ?? env.DEPOSON_POOL ?? (ledger + '.pool')
+  const gPolicy = config.gPolicy ?? env.DEPOSON_G_POLICY ?? 'p1'                    // 'p1' | 'off'
+  const qRef = Number(config.qRef ?? env.DEPOSON_Q_REF ?? 0)                        // 0＝沿参数面 Q
+  const massBucket = flagOn(config.massBucket ?? env.DEPOSON_MASS_BUCKET, false)
+  const phantomForm = config.phantomForm ?? env.DEPOSON_PHANTOM_FORM ?? 'kout'      // 'kout' | 'kin'
+  const kinScope = config.kinScope ?? env.DEPOSON_KIN_SCOPE ?? 'multi'              // 'multi' | 'single-writer'
+  const addrSchema = flagOn(config.addrSchema ?? env.DEPOSON_ADDR_SCHEMA, true)
+  const principal = config.principal ?? env.DEPOSON_PRINCIPAL ?? null
   const registered = base.registered
 
   const childEnv = {
@@ -345,7 +356,16 @@ function makeThermoFace(ctx, config, base) {
     CONDENSATE_LEDGER: ledger,
     DEPOSON_PL_LANG: lang,
     DEPOSON_THERMO_FOOTER: footerOn ? '1' : '0',
+    DEPOSON_EXECUTOR: executorOn ? '1' : '0',
+    DEPOSON_POOL: pool,
+    DEPOSON_G_POLICY: gPolicy,
+    DEPOSON_MASS_BUCKET: massBucket ? '1' : '0',
+    DEPOSON_PHANTOM_FORM: phantomForm,
+    DEPOSON_KIN_SCOPE: kinScope,
+    DEPOSON_ADDR_SCHEMA: addrSchema ? '1' : '0',
   }
+  if (qRef > 0) childEnv.DEPOSON_Q_REF = String(qRef)
+  if (principal) childEnv.DEPOSON_PRINCIPAL = principal
   if (thermo) childEnv.DEPOSON_THERMO = typeof thermo === 'string' ? thermo : JSON.stringify(thermo)
   else delete childEnv.DEPOSON_THERMO
   try { mkdirSync(path.dirname(ledger), { recursive: true }) } catch { /* dir may already exist */ }

@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install cryptography (executor face runtime dependency, preview.11)
+        run: pip install --quiet cryptography
       - name: Compile all Python sources
         run: python -m compileall -q harness gates mocks scripts tests
       - name: Gate arithmetic self-test (pure math, no external data)
@@ -36,8 +38,50 @@ jobs:
         run: python gates/descrev_calibration.py
       - name: Readings-package completeness validator self-test (preview.9 interface G, zero network)
         run: python gates/readout_completeness.py
-      - name: Memory harness MCP self-test (stdio, zero network; preview.10 thermo segments 5-7 included)
-        run: python mcp/selftest_mcp.py
+      - name: Memory harness MCP self-test (stdio, zero network; E-off arm — the frozen self-test asserts preview.10 phantom-key semantics)
+        run: DEPOSON_EXECUTOR=0 python mcp/selftest_mcp.py
+      - name: Organ v3.1 executor self-test (82 checks; AES-GCM keystore, tombstone chain, probe; zero network; E-off env only pins the frozen selftest_mcp child D10 — organ checks construct the executor directly)
+        run: DEPOSON_EXECUTOR=0 python mcp/selftest_organ_v3.py
+      - name: C1 no-vector-archive audit (ether_archive fake inverse-solver stays deleted; P476 'land in one pass')
+        run: python scripts/c1_no_vector_archive_audit.py
+      - name: Executor-face MCP stdio smoke (write -> phantom K-out -> audit; ciphertext on disk; zero network)
+        run: |
+          python - <<'PYEOF'
+          import os, sys, json, tempfile, subprocess
+          tmpd = tempfile.mkdtemp(prefix="executor_smoke_")
+          env = dict(os.environ); env.pop("DEPOSON_EXECUTOR", None)
+          env["CONDENSATE_LEDGER"] = os.path.join(tmpd, "ledger.jsonl")
+          p = subprocess.Popen([sys.executable, "mcp/mcp_server.py"], stdin=subprocess.PIPE,
+                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env)
+          def rpc(o):
+              p.stdin.write((json.dumps(o) + "\n").encode()); p.stdin.flush()
+              return json.loads(p.stdout.readline().decode())
+          rpc({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}})
+          rpc({"jsonrpc":"2.0","id":2,"method":"notifications/initialized","params":{}})
+          def call(name, args):
+              r = rpc({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":name,"arguments":args}})["result"]
+              assert not r.get("isError"), r["content"][0]["text"]
+              return r["content"][0]["text"]
+          w = call("deposon_memory_write", {"key":"p.a","text":"alpha-secret"})
+          assert w.startswith("written:") and "执行器已凝华" in w, w
+          call("deposon_memory_write", {"key":"p.b","text":"beta-secret"})
+          call("deposon_memory_read", {"prefix":"p.a"})
+          for _ in range(3): call("deposon_thermo_settle", {})
+          rp = call("deposon_memory_read", {"prefix":"p."})
+          lines = rp.split("\n")
+          assert lines[0] == "p.a: alpha-secret", rp
+          ph = [l for l in lines if "⟨幻肢⟩" in l]
+          assert ph and ph[0].startswith("p.: ⟨幻肢⟩"), rp          # K-out：行键＝查询前缀·存储键不出服务端
+          assert "beta-secret" not in rp, rp                        # 散失内容 0 回注
+          rep = json.loads(call("deposon_thermo_audit", {"format":"json"}))
+          assert rep["verdict"] == "SELF-CONSISTENT" and rep["E0"] == rep["phi"] + rep["R"] + rep["D"] + rep["U"], rep.get("verdict")
+          ledger = open(env["CONDENSATE_LEDGER"], encoding="utf-8").read()
+          assert '"text"' not in ledger and '"ct"' in ledger, "ciphertext-only ledger face violated"
+          pool = open(env["CONDENSATE_LEDGER"] + ".pool", encoding="utf-8").read()
+          assert "beta" not in pool.lower(), pool                   # 散失行 DEK 已不在场
+          p.kill()
+          print("executor stdio smoke OK (ciphertext ledger, K-out phantom, conservation)")
+          PYEOF
       - name: Ledger dual-implementation cross-check (Lean T1-T6 vs Python core, zero network)
         run: python mcp/ledger_crosscheck.py
       - name: Thermodynamic ledger dual-implementation cross-check (Lean DeposonThermo vs Python core, hand-computed settlement vector)
@@ -55,6 +99,9 @@ jobs:
           for need in ["cordis.patch.yml", "plugin/index.js", "mcp/mcp_server.py", "mcp/thermo_core.py",
                        "mcp/thermo_cli.py", "mcp/phantom_limb.py", "mcp/phantom_limb.zh.txt", "mcp/phantom_limb.en.txt",
                        "harness/DeposonThermo.lean", "harness/lean_axiom_audit.py", "mcp/thermo_crosscheck.py",
+                       "mcp/irreversible_executor.py", "mcp/selftest_organ_v3.py",
+                       "harness/IrreversibleDeposon.lean", "harness/DeposonThermoRecon.lean",
+                       "scripts/c1_no_vector_archive_audit.py",
                        "mcp/thermo_demo.py", "tests/test_plugin_load.mjs"]:
               assert need in files, need
           print("packaged files OK:", len(files))

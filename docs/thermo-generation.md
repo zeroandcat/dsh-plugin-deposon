@@ -393,3 +393,79 @@ node tests/test_plugin_load.mjs         # dsh entry, mock Cordis context
 python harness/thermo_live_round.py --dry-run --out /tmp/x.json          # 0 network
 OPENROUTER_API_KEY=… python harness/thermo_live_round.py --out /tmp/x.json  # real model
 ```
+
+## 12. The irreversible-executor generation (preview.11)
+
+The thermodynamic generation (preview.10) made dissipation a *state-level*
+fact, but the inject rows still carried plaintext `text` on disk: erasure was
+maintained by the reducer's replay convention alone. preview.11 routes
+write/read through the irreversible executor (`mcp/irreversible_executor.py`,
+the v3.1.1 organ, pinned `d2189f2c4f1e`; self-test `mcp/selftest_organ_v3.py`,
+pinned `62cb86c40a80`, 82 checks):
+
+- **Ciphertext on disk.** Each inject row stores AES-256-GCM ciphertext only
+  (per-row random DEK, key as AAD). DEKs live solely in the in-field pool
+  (`pool` config / `DEPOSON_POOL`; default `<ledger>.pool` — one pool per
+  ledger, same lifecycle).
+- **Dissipation = cryptographic erasure.** A dissipated row's DEK is destroyed
+  from the pool (idempotent) and a hash-chained tombstone row is appended
+  (tamper-evident; `verify_chain` fail-loud). The `g_aether` accumulator is a
+  background-field statistics residue only (n/q/mass; never content) —
+  *metaphor name, not ontology* (kimi round6 R-9).
+- **Phantom rows, K-out general form.** Row key = the query prefix, never the
+  stored key (Lean `render_q_indep_of_stored_key`). `kin` is a single-writer
+  special case behind a four-condition gate (`kinScope=single-writer` +
+  Σ address check at the write entry + principal partition + exact-address
+  reads; prefix queries always answer K-out, denial recorded in
+  `kin_last_denied`).
+- **Falsification probe.** `attempt_inverse` tries every inverse route
+  (A0/A1/A2/A4) to recover dissipated content; any success raises
+  `TheoryFalsified` — the theory's own refutation condition, executable.
+- **Ablation switch.** `executor: false` (`DEPOSON_EXECUTOR=0`) restores the
+  preview.10 ledger face verbatim (plaintext JSONL) — the E-off arm stays
+  runnable on the same tool surface (D6: tool names/schemas/receipt shape
+  unchanged; write receipts gain one status line `· 执行器已凝华（密文落盘·钥在场）`).
+- **Degraded audit, honest.** If the crash window hits (tombstone committed,
+  DEK not yet destroyed), `deposon_thermo_audit` returns verdict
+  `EXECUTOR-BREACH` with `pending_erase` listed and `isError=true` — it never
+  pretends to be self-consistent (D16).
+- **Lean mirrors** (core-only, 0 sorry): `harness/IrreversibleDeposon.lean`
+  (58 theorems, pinned `0decb3a4059f`) and
+  `harness/DeposonThermoRecon.lean` (the three-layer reconstruction case
+  file, 32 items, kimi round12-absorbed, sha12 `45c56f1e5487`).
+
+### 12.1 C1: the `ether_archive` fake inverse-solver stays deleted (landed with this refactor)
+
+The M4 source block in the dialogue transcript stored the *complete state
+vector* in an "ether archive" (`ether_archive[state_id] = {'vector': …}`).
+kimi round3 adjudicated (K8): this is an ontology-level error — an archive
+with content means the aether is not a true dissipation sink — and it must
+be **deleted, not reworded**. This repository never carried that code; with
+this refactor the deletion is enforced structurally, in the same landing:
+
+- `scripts/c1_no_vector_archive_audit.py` (CI gate): scans every code face
+  for the `ether_archive` symbol and any content-vector persistence key; fails
+  the build on any hit (exit 2). The executor itself asserts the same shape
+  (no vector storage; probe + erasure in place).
+- The transcript's M4 block is quoted verbatim in the paper face with an
+  erratum note (R3 §1/§4.5; see also 阿兰 T4) — original text is *not*
+  deleted there; this repo is where "deleted" means executable.
+
+### 12.2 Era separation and boundaries (honest caveats)
+
+- **Mixed-era ledgers fail loud.** An executor-format log replayed by the
+  preview.10 face (or a plaintext row found by the executor replay) is a
+  hard error (`ExecutorBreach` I1), by design (R-4 era field; separate
+  ledgers per era).
+- **`thermo_cli.py` follows the backend.** It detects the ledger format and
+  replays executor logs through `IrreversibleLedger` (same pool rule as
+  `mcp_server.py`); brief/audit/settle outputs keep their frozen shapes.
+  This touch is beyond the v3 落地序 list (which named only the
+  `mcp_server.py` backend swap) — recorded here as an honest increment.
+- **A3 boundary unchanged.** Pool backup/snapshot/medium-residue recovery of
+  destroyed DEKs is out of the adversary model (a theory-level boundary,
+  stated in the audit's `boundary_A3`; `demonstrate_boundary_A3` shows the
+  salvage path succeeds and is *not* part of the tool face or the probe).
+- **Benchmark ablation not re-run** (same caveat as §10.4): the usability
+  ablation in `BENCHMARK.md` was measured on the preview.9 face; the
+  executor-generation price is 待测.

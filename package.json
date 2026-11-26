@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-deposon",
-  "version": "0.1.0-preview.10",
+  "version": "0.1.0-preview.11",
   "description": "Deposon memory-probe experiment harness as a DeepSeek Harness (dsh) plugin: pre-registered gates, frozen blind faces, recompute tooling, a living-water memory ledger with a thermodynamic (self-settling, phantom-limb) layer, and a one-shot quickcheck entry (npx)",
   "type": "module",
   "main": "plugin/index.js",
