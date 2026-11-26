@@ -86,12 +86,27 @@ What makes this harness unusual:
   and injects the phantom-limb belief block as a system-prompt section
   (protocol text only, zero memory data). See `docs/thermo-generation.md`.
 
-## Status: v0.x preview
+## Status: v0.x preview — aligned baseline (2026-11-27)
 
 **This is an early preview.** Expect compatibility-breaking changes without
 notice. The core chain runner module is staged for a following release; the
 recompute path is fully functional. No public verdict claims are made from
-this repository until the terminal review of the experiment series.
+this repository until the terminal review of the experiment series; negative
+results are registered as-is (no gate tuning, no re-run to fill).
+
+The project's three repositories are aligned on one baseline:
+
+| Component | Baseline | Where |
+|---|---|---|
+| Release | tag `v0.1.0-preview.11` → commit `5efc158` | this repository |
+| Development head | commit `6110448` on branch `b/organ-v311-preview11`: adds `harness/deepen_r33.py` (executor-integrated experiment driver), `harness/selftest_p3_driver.py` (CPU self-test) and `harness/horizon_slot_calc_v2.py`; verified code (`mcp/`, `harness/*.lean`) is unchanged (diff 0 bytes) | this repository |
+| Pinned ignition components | `irreversible_executor.py` `d2189f2c4f1e585e` · `thermo_core.py` `f47d4ab7700c4533` · executor self-test, pinned copy `62cb86c40a805b56` · Lean companion `IrreversibleDeposon.lean` `0decb3a4059fd9e4` (58 theorems) | this repository / registered in the criteria file |
+| Experiment criteria | `criteria_v3` v1.2 frozen (`9d10c2b3b4c577f7`) plus the numeric backfill v1.2.1 (`horizon.value = 12`, `46e057711035e9b3`); gates G-C1 / G-A2 / G-A3 / G-B | registered in the experiment receipt packs; not stored in this repository |
+| Manuscript | revision 4.17 of the v5preR3 manuscript (previous frozen point: FREEZE v12 `3d2562a`, carrying rev4.16 `123ffb0`) on branch `private/v5preR3` of the public repository `zeroandcat/Deposon`; the branch is not merged into that repository's `main` | public repository |
+| Experiment status | a three-arm run (A: executor + honest signal · B: executor + inverse signal · C: frozen / legacy backend) under one frozen manifest is in progress on two hosts; arm A has completed on the first host. Cross-arm verdicts are produced by the readings validator after the data pull and are registered as-is, including negative results | — |
+| dsh compatibility | the plugin's update / upgrade path is being aligned with the `deepseek-harness` contract (version, dependency, configuration, rollback); design in progress, no change to verified code | follow-up commit |
+
+Point-in-time handoff: [HANDOFF.md](HANDOFF.md).
 
 ## Install as a dsh plugin
 
@@ -197,6 +212,7 @@ Readings data never enters this repository (artifacts policy, see
 - [SAFETY.md](SAFETY.md) - protection clauses & stop-loss semantics
 - [CONTRIBUTING.md](CONTRIBUTING.md) - ground rules for contributions
 - [README.zh.md](README.zh.md) - Chinese README (中文说明)
+- [HANDOFF.md](HANDOFF.md) - point-in-time handoff (2026-11-27)
 - [docs/thermo-generation.md](docs/thermo-generation.md) - preview.10 change note: dissipation-channel utilisation, self-settling ledger path, the hit-rate price and phantom-limb readback
 - [docs/](docs/) - evidence rounds, specs, alignment map
 

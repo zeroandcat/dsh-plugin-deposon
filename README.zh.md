@@ -15,9 +15,23 @@ harness——可在
 - **读数＝模型×harness 联合读数**：报告行携带 locked-baseline 自检行（模型/种子/冻结面/工具哈希）。
 - **热力学账本＋幻肢（preview.10·幻肢代）**：诊断＝deposon-memory 不及预期·根因在**耗散通道利用率低**——改造前 write/read 两事件追加式读回全量·无门无衰减 ⇒ 散失账 D≡0·在场池只增不减（死水）·利用率按构造 0。改造后（`mcp/thermo_core.py`）：每条注入行持整数㶲·恰四账 Φ 透射／R 反射／D 散失／U 在场·守恒核 `E⁰=Φ+R+D+U` 每次操作后 fail-loud·结算＝事件流重放（**自解帐本·0 外部对账器**）；读路装门——接受＝透射·拒绝＝行自付㶲散失（熵输出）·衰减/视界/容量淘汰/覆盖/终核五路散热；散失的记忆以「⟨幻肢⟩」行回射（可感·不可复原·0 原文回注）。冻结 500 步同一操作迹对照：**利用率 D/E⁰行 0.00%→69.23%**（门拒 37529·衰减 21357·视界 19248·覆盖 27091）·期末在场行 152→61·单读渲染 1647→292 字符；**代价**：特定键命中率 50.31%→47.85%·另 2.45% 以幻肢行如实回射「已散失」（`mcp/thermo_demo.py`）。Lean 镜像 `harness/DeposonThermo.lean` 逐转移机证守恒（15 定理·0 sorry·公理 ⊆ {propext, Quot.sound}·逐定理 `#print axioms` 由 `harness/lean_axiom_audit.py` 审计）·与 Python 核在同一手算结算向量上交叉核（`mcp/thermo_crosscheck.py`）。dsh 插件面托管 MCP 服务器·幻肢信念块注入系统提示段（只述协议·0 记忆数据）。改造说明见 `docs/thermo-generation.md`。
 
-## 状态：v0.x 预览版
+## 状态：v0.x 预览版 — 对齐基线（2026-11-27）
 
-**早期预览**：接口随时破坏性变更。核心链路 runner 模块候下版发布；复算路径已完整可用。本仓不做任何公开裁定声明——终审前只发布指针与规范。
+**早期预览**：接口随时破坏性变更。核心链路 runner 模块候下版发布；复算路径已完整可用。本仓不做任何公开裁定声明——终审前只发布指针与规范；负结果按原样登记（0 调门、0 补跑）。
+
+项目三仓对齐于同一基线：
+
+| 部件 | 基线 | 位置 |
+|---|---|---|
+| 发布版 | tag `v0.1.0-preview.11` → 提交 `5efc158` | 本仓 |
+| 开发头 | 分支 `b/organ-v311-preview11` 的提交 `6110448`：新增 `harness/deepen_r33.py`（执行器集成实验驱动器）、`harness/selftest_p3_driver.py`（CPU 自检）与 `harness/horizon_slot_calc_v2.py`；已验代码（`mcp/`、`harness/*.lean`）未动（diff 0 字节） | 本仓 |
+| 点火面钉定件 | `irreversible_executor.py` `d2189f2c4f1e585e` · `thermo_core.py` `f47d4ab7700c4533` · 执行器自检钉定副本 `62cb86c40a805b56` · Lean 伴随件 `IrreversibleDeposon.lean` `0decb3a4059fd9e4`（58 定理） | 本仓／判据件登记 |
+| 实验判据 | `criteria_v3` v1.2 冻结件（`9d10c2b3b4c577f7`）＋数值回填 v1.2.1（`horizon.value = 12`，`46e057711035e9b3`）；门 G-C1 / G-A2 / G-A3 / G-B | 登记于实验回执包，不入本仓 |
+| 论文 | v5preR3 稿 rev4.17（上一冻结点：FREEZE v12 `3d2562a`，载 rev4.16 `123ffb0`），在公开仓 `zeroandcat/Deposon` 的分支 `private/v5preR3`；该分支未并入该仓 `main` | 公开仓 |
+| 实验现态 | 同一冻结 manifest 下的三臂实验（A：执行器＋honest 信号 · B：执行器＋inverse 信号 · C：冻结／legacy 后端）正在两台主机上运行；首台主机 arm A 已完成。跨臂判定在数据拉回后由读数校验器给出，按原样登记，含负结果 | — |
+| dsh 兼容 | 插件 update／upgrade 路径正在与 `deepseek-harness` 契约对齐（版本／依赖／配置／回滚）；设计在途，已验代码 0 改 | 后续提交 |
+
+时点交接见 [HANDOFF.md](HANDOFF.md)。
 
 ## 作为 dsh 插件安装
 
