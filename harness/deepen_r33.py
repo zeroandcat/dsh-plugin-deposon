@@ -1269,7 +1269,8 @@ def run_arm(args, arm, backend, signal, g_policy, horizon, pre, criteria, csha):
     print(f'[R32-FAMPLAN] 冻结: ratio={MIX_WR_RET} p_ret={_fp["p_ret"]:.4f} episodes={len(_fp["plan"])}×{MEM_BATCH} '
           f'计数={_cnt} d_ladder={_fp["d_ladder"]} lost_episodes={sum(1 for r in _fp["plan"] for e in r if e[2])}', flush=True)
     cfg = build_config(arm, backend, signal, g_policy, horizon, mdigest, criteria, csha, sha_file(f'{OUT}/mem_family_plan.json'),
-                       {'preflight': {k: v for k, v in pre.items() if k != 'time'}})
+                       {'preflight': {k: v for k, v in pre.items() if k != 'time'},
+                        **({'train_steps_cap': getattr(args, 'train_steps', None)} if getattr(args, 'train_steps', None) else {})})
     jdump(cfg, f'{OUT}/deepen_config.json')
     planf = f'{OUT}/batch_plan.json'
     if not os.path.exists(planf):
@@ -1340,8 +1341,10 @@ def run_arm(args, arm, backend, signal, g_policy, horizon, pre, criteria, csha):
     _TR = ({'rows': [], 'rows_path': f'{OUT}/train_ev_stats.jsonl'} if backend != 'frozen' else None)   # [R33] A/B 训练态累加器
     led_root = f'{OUT}/train_ledgers'
     smoke_rows = []; smoke_t0 = time.time()
-    print(f'DEEPEN-R1-START 0->{TOTAL}' + (f' (smoke-steps={args.smoke_steps})' if args.smoke_steps else ''), flush=True)
-    for step in range(1, TOTAL + 1):
+    TRAIN_N = getattr(args, 'train_steps', None) or TOTAL   # [G4-A] 短链截断：只截训练循环·plan/lr/sched 沿全链口径取前缀（与长链前 200 步逐位同）
+    if TRAIN_N < TOTAL: plan = plan[:TRAIN_N]
+    print(f'DEEPEN-R1-START 0->{TRAIN_N}' + (f' (smoke-steps={args.smoke_steps})' if args.smoke_steps else '') + (f' (train-steps={getattr(args, "train_steps", None)})' if getattr(args, 'train_steps', None) else ''), flush=True)
+    for step in range(1, TRAIN_N + 1):
         enc, tgt = batch_tensors(plan[step - 1])
         st = deploy()
         rs['viol_total'] += st['violations']; rs['corr_flips_total'] += st['corr_flips']
@@ -1580,6 +1583,7 @@ def main():
     ap.add_argument('--memory-backend', choices=['frozen', 'v3', 'v3-fake'], default=None, help='缺省取 ARM_CFG[arm]·显式给出须相等')
     ap.add_argument('--signal', choices=['honest', 'legacy', 'inverse'], default=None)
     ap.add_argument('--smoke-steps', type=int, default=0, help='>0：训练径前 N 步冒烟（逐步行＋随机态指纹落盘·非轮读数）')
+    ap.add_argument('--train-steps', type=int, default=None, help='>0：训练径截前 N 步短链（plan/lr 沿全链口径取前缀·链毕正常走终评/探针/读数包·G4-A 案 200 步/点·缺省=None＝全链 %d）' % TOTAL)
     ap.add_argument('--legacy-eval', action='store_true', help='另跑 r32 终窗评估（wr_n128＋P_SR 六档·SUITE 在位时）')
     ap.add_argument('--emit-arm', choices=['A', 'B', 'C'], default='A', help='emit-config-sample 用')
     a = ap.parse_args()
@@ -1604,6 +1608,10 @@ def main():
         backend, signal, g_policy = ARM_CFG[a.arm]
         if a.memory_backend and a.memory_backend != backend: raise DriverFail(EXIT_CONFIG, '--memory-backend 与 ARM_CFG[%s] 不等' % a.arm)
         if a.signal and a.signal != signal: raise DriverFail(EXIT_CONFIG, '--signal 与 ARM_CFG[%s] 不等' % a.arm)
+        # [G4-A] --train-steps 校验（短链轮读数径·与冒烟互斥·范围 fail-loud）
+        if a.train_steps is not None:
+            if a.smoke_steps: raise DriverFail(EXIT_CONFIG, '--train-steps 与 --smoke-steps 互斥（冒烟非轮读数·短链轮读数走 --train-steps）')
+            if a.train_steps < 1 or a.train_steps > TOTAL: raise DriverFail(EXIT_CONFIG, '--train-steps 须在 [1,%d]' % TOTAL)
         if a.smoke_steps:
             horizon = a.horizon if a.horizon else default_horizon()   # 冒烟：horizon 只影响 A/B 账本 cfg·非轮读数（manifest 非必需）
             pre, criteria, csha = preflight(a, 'smoke')
