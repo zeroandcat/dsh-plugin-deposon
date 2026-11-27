@@ -62,10 +62,10 @@ Status. Readings data never enters this repository (artifacts policy).
 | 位 | 值 |
 |---|---|
 | 仓址 | `github.com/zeroandcat/dsh-plugin-deposon` |
-| 分支 | `b/organ-v311-preview11` → HEAD `9219e78`（preview.12·父 `6110448`） |
+| 分支 | `b/organ-v311-preview11` → HEAD `286811e`（preview.12 线：合流 `15613c1`＋w5 头注 `dd441be`＋docs 勘正·内容基 `9219e78` 父 `6110448`） |
 | main | `1e27d7c`（origin/main·本分支领先 5） |
-| tag | `v0.1.0-preview.11` → `5efc158`（CI 绿锚·**未随 preview.12 移动·候 PI**） |
-| 版本源 | `package.json` `0.1.0-preview.12`（唯一版本源·MCP clientInfo 与升级工具均读它） |
+| tag | `v0.1.0-preview.12` → `dd441be`（tag 对象 `6d66c6ec678f7baf`·P481 C3 甲 2026-11-27 已打已推·CI 双绿）；`v0.1.0-preview.11` → `5efc158` 沿革 |
+| 版本源 | `package.json` `0.1.0-preview.13`（唯一版本源·MCP clientInfo 与升级工具均读它；preview.12 态由 git tag 标记·版本字段自 preview.11 直跳 .13·沿革注） |
 | preview.12 主件 | `plugin/update.mjs`（selfcheck/plan/apply/rollback·四支柱）＋ `tests/test_update_path.mjs`（16/16） |
 | I-3 era 握手 | MCP `initialize` 自报 `era`（executor｜preview.10）＋`executorConfigDigest`·驱动器/自测件声明期望·不等 fail-loud（防臂串线） |
 | I-4 依赖探测 | 执行器 lazy import——E-off 面 0 第三方依赖；执行器态缺 cryptography ⇒ stderr 明示＋exit 3（不静默降级） |
