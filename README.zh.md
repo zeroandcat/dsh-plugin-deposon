@@ -24,7 +24,7 @@ harness——可在
 | 部件 | 基线 | 位置 |
 |---|---|---|
 | 发布版（稳定） | tag `v0.1.0-preview.11` → 提交 `5efc158`（CI 绿·论文 Access 段所引提交） | 插件仓 `zeroandcat/dsh-plugin-deposon` |
-| 开发前沿 | 分支尖 `286811e`（`b/organ-v311-preview11`）——preview.12 线（`9219e78`·父 `6110448`＝执行器集成驱动器 `harness/deepen_r33.py`＋CPU 自检 `harness/selftest_p3_driver.py`＋horizon 槽位计算器 `harness/horizon_slot_calc_v2.py`·已验代码 0 动：update／upgrade 路径、账本时代握手服务端半、执行器 lazy import 与三处自检重钉·README「Update / upgrade」节随该线发布）经合流 `15613c1`＋w5 头注勘正 `dd441be`＋docs 勘正；**2026-11-27 已推送**（FF·0 force）并随打 tag `v0.1.0-preview.12`→`dd441be`（tag 对象 `6d66c6ec678f7baf`·PI P481 C3 甲）；GHCR 运行镜像 `ghcr.io/zeroandcat/dsh-plugin-deposon:preview.12`（manifest `sha256:de0701a9…`）自 `bc7ef56` 发布 | 插件仓 |
+| 开发前沿 | 分支尖 `e8fe281`（`b/organ-v311-preview11`）——preview.13 线（docs/version bump `368cc7d`＋Lean 伴件 `EtaAlphaMap.lean` `e8fe281`·码基 `9219e78` 父 `6110448`＝执行器集成驱动器 `harness/deepen_r33.py`＋CPU 自检 `harness/selftest_p3_driver.py`＋horizon 槽位计算器 `harness/horizon_slot_calc_v2.py`·已验代码 0 动：update／upgrade 路径、账本时代握手服务端半、执行器 lazy import 与三处自检重钉·README「Update / upgrade」节随该线发布）经合流 `15613c1`＋w5 头注勘正 `dd441be`＋docs 勘正；**preview.13 已推送 2026-11-27 22:08**（单 FF·0 force·三引用一致）并随打 tag `v0.1.0-preview.13`→`e8fe281`（tag 对象 `012a0d0888e7c768`）；G4-A 驱动器升版 `fc74e10`（`deepen_r33 --train-steps`·PI 23:04 裁 A）本地在分支候推送窗；GHCR 运行镜像仍 `preview.12`（`sha256:de0701a9…`·自 `bc7ef56` 发布）——publish-image 未随 preview.13 触发（变更面未命中 `paths: ['docker/**', …]`；重触发径＝commit marker `[image:<tag>]`／workflow_dispatch `image_tag`／触 `docker/**`） | 插件仓 |
 | 点火面钉定件 | `irreversible_executor.py` `d2189f2c4f1e585e` · `thermo_core.py` `f47d4ab7700c4533` · 执行器自检钉定副本 `62cb86c40a805b56` · Lean 伴随件 `IrreversibleDeposon.lean` `0decb3a4059fd9e4`（58 定理） | 插件仓／判据件登记 |
 | 实验判据 | `criteria_v3` v1.2 冻结件（`9d10c2b3b4c577f7`）＋数值回填 v1.2.1（`horizon.value = 12`，`46e057711035e9b3`）；门 G-C1 / G-A2 / G-A3 / G-B；校验器判定已于 2026-11-27 晨登记（见实验现态行） | 登记于实验回执包，不入本仓 |
 | 论文 | v5preR3 稿 rev4.17（提交 `2c8252f`·tex `582031697650be00`·530 行·30 页），FREEZE v13 冻于分支尖 `dea75bc`，在公开仓 `zeroandcat/Deposon` 分支 `private/v5preR3`（77 提交；未并入该仓 `main`——历史无关，合并编辑决策候裁） | 公开仓 |
@@ -40,12 +40,22 @@ harness——可在
 `dsh.bundle.patch`·Cordis `apply(ctx, config)` 入口）：
 
 ```bash
-# 在 dsh agent / Web UI 插件管理器中：
-dsh plugin add https://github.com/zeroandcat/dsh-plugin-deposon
+# 在 dsh agent / Web UI 插件管理器中（市面惯例：裸包名＝latest 浮动·仅当 registry
+# 未同步或最新版在环境中有问题时才追加 @版本号）：
+dsh plugin --profile web add dsh-plugin-deposon    # 重启 dsh web 生效
+
+# 无全局 dsh？npx 变体：
+npx -y @deepseek-ai/dsh plugin --profile web add dsh-plugin-deposon
+
+# 从 git 源仓装（仓尖·非 npm registry）：
+dsh plugin --profile web add https://github.com/zeroandcat/dsh-plugin-deposon
 
 # 或本地克隆（path: 形式）：
-dsh plugin add path:./dsh-plugin-deposon
+dsh plugin --profile web add path:./dsh-plugin-deposon
 ```
+
+> 版本钉法：论文复现引用 `v0.1.0-preview.11`——按市面 `@版本号` 例外注显式钉
+> `dsh-plugin-deposon@0.1.0-preview.11`；缺省 latest 浮动。
 
 安装后插件以 bundle entry `deposon` 挂载（见 `cordis.patch.yml`），把门算术
 自检暴露为 agent 可调用面（`deposon_gate_check` / `/deposon-gate-check`）。

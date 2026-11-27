@@ -15,15 +15,19 @@ aligned baseline table lives in the "Status" section of `README.md`.
   (true dual-binding) positions all pass with the R-observation readings
   bit-identical across hosts; G-C1 out-of-band, registered in parallel to the
   confirmation rounds (re-judgement requires a new criteria freeze, pending).
-- **Plugin.** Release tags `v0.1.0-preview.11` (`5efc158`, CI green) and
-  `v0.1.0-preview.12` (`dd441be`, tag object `6d66c6ec678f7baf` — P481 C3)
-  stay the stable points. The development frontier is `dd441be` on
-  `b/organ-v311-preview11` (preview.12 merge `15613c1` with the docs-only
-  register commits via ort auto-merge, 0 conflicts, plus the w5 header fix):
-  the update/upgrade path, the ledger-era handshake server half, lazy
-  executor imports, re-pinned self-tests and the README "Update / upgrade"
-  section — merged and pushed 2026-11-27 (the earlier "local-commit-only"
-  wording is superseded; see the errata note in item 2).
+- **Plugin.** Release tags `v0.1.0-preview.11` (`5efc158`, CI green),
+  `v0.1.0-preview.12` (`dd441be`, tag object `6d66c6ec678f7baf` — P481 C3) and
+  `v0.1.0-preview.13` (`e8fe281`, tag object `012a0d0888e7c768` — pushed
+  2026-11-27 22:08, single FF 0 force, three refs aligned, CI three triggers
+  all success) stay the stable points. The development frontier is `e8fe281`
+  on `b/organ-v311-preview11` (preview.13: docs/version bump `368cc7d` plus
+  the `EtaAlphaMap.lean` companion; the G4-A driver upgrade `fc74e10` —
+  `deepen_r33 --train-steps`, PI 23:04 verdict A — is local pending the push
+  window). GHCR runtime image remains `preview.12` (`sha256:de0701a9…`):
+  publish-image did not fire on preview.13 because the change face missed the
+  `paths: ['docker/**', '.github/workflows/publish.yml']` trigger — re-fire
+  paths = commit marker `[image:<tag>]`, workflow_dispatch `image_tag`, or
+  touching `docker/**`.
 - **Manuscript.** rev4.17 (`2c8252f`) frozen as FREEZE v13 at the branch tip
   `dea75bc` of branch `private/v5preR3` (public repository
   `zeroandcat/Deposon`, 77 commits, `main` untouched); not merged into `main`
@@ -62,10 +66,10 @@ Status. Readings data never enters this repository (artifacts policy).
 | 位 | 值 |
 |---|---|
 | 仓址 | `github.com/zeroandcat/dsh-plugin-deposon` |
-| 分支 | `b/organ-v311-preview11` → HEAD `286811e`（preview.12 线：合流 `15613c1`＋w5 头注 `dd441be`＋docs 勘正·内容基 `9219e78` 父 `6110448`） |
+| 分支 | `b/organ-v311-preview11` → HEAD `e8fe281`（preview.13 线：docs/version bump `368cc7d`＋Lean 伴件 `EtaAlphaMap.lean`·码基 `9219e78` 父 `6110448`·2026-11-27 22:08 已推；G4-A 驱动器升版 `fc74e10` 本地候推送窗） |
 | main | `1e27d7c`（origin/main·本分支领先 5） |
 | tag | `v0.1.0-preview.12` → `dd441be`（tag 对象 `6d66c6ec678f7baf`·P481 C3 甲 2026-11-27 已打已推·CI 双绿）；`v0.1.0-preview.11` → `5efc158` 沿革 |
-| 版本源 | `package.json` `0.1.0-preview.13`（唯一版本源·MCP clientInfo 与升级工具均读它；preview.12 态由 git tag 标记·版本字段自 preview.11 直跳 .13·沿革注） |
+| 版本源 | `package.json` `0.1.0-preview.14`（唯一版本源·MCP clientInfo 与升级工具均读它；preview.12/13 态由 git tag 标记·docs-only 轮 bump .13→.14·沿革注） |
 | preview.12 主件 | `plugin/update.mjs`（selfcheck/plan/apply/rollback·四支柱）＋ `tests/test_update_path.mjs`（16/16） |
 | I-3 era 握手 | MCP `initialize` 自报 `era`（executor｜preview.10）＋`executorConfigDigest`·驱动器/自测件声明期望·不等 fail-loud（防臂串线） |
 | I-4 依赖探测 | 执行器 lazy import——E-off 面 0 第三方依赖；执行器态缺 cryptography ⇒ stderr 明示＋exit 3（不静默降级） |

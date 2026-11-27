@@ -99,7 +99,7 @@ The project's three repositories are aligned on one baseline:
 | Component | Baseline | Where |
 |---|---|---|
 | Release (stable) | tag `v0.1.0-preview.11` → commit `5efc158` (CI green; the commit the paper's Access section cites) | the plugin repository `zeroandcat/dsh-plugin-deposon` |
-| Development frontier | branch tip `286811e` on `b/organ-v311-preview11` — the preview.12 line (`9219e78`, on top of `611048`-successor `6110448`, with the executor-integrated driver `harness/deepen_r33.py`, CPU self-test `harness/selftest_p3_driver.py`, horizon slot calculator `harness/horizon_slot_calc_v2.py`; verified code unchanged, diff 0 bytes: the update/upgrade path, the ledger-era handshake server half, lazy executor imports, re-pinned self-tests, the README "Update / upgrade" section) merged as `15613c1`, the w5 header fix `dd441be`, then docs-only errata; **pushed 2026-11-27 (FF, 0 force)** with tag `v0.1.0-preview.12` → `dd441be` (tag object `6d66c6ec678f7baf`, PI P481 C3-A); GHCR runtime image `ghcr.io/zeroandcat/dsh-plugin-deposon:preview.12` (manifest `sha256:de0701a9…`) published from `bc7ef56` | the plugin repository |
+| Development frontier | branch tip `e8fe281` on `b/organ-v311-preview11` — the preview.13 line (docs/version bump `368cc7d` + Lean companion `EtaAlphaMap.lean` `e8fe281`; code base `9219e78` on top of `6110448`, with the executor-integrated driver `harness/deepen_r33.py`, CPU self-test `harness/selftest_p3_driver.py`, horizon slot calculator `harness/horizon_slot_calc_v2.py`; verified code unchanged, diff 0 bytes: the update/upgrade path, the ledger-era handshake server half, lazy executor imports, re-pinned self-tests, the README "Update / upgrade" section) merged as `15613c1`, the w5 header fix `dd441be`, then docs-only errata; **preview.13 pushed 2026-11-27 22:08 (single FF, 0 force, three refs aligned)** with tag `v0.1.0-preview.13` → `e8fe281` (tag object `012a0d0888e7c768`); the G4-A driver upgrade `fc74e10` (`deepen_r33 --train-steps`, PI 23:04 verdict A) is local on the branch pending the push window; GHCR runtime image remains `preview.12` (`sha256:de0701a9…`, published from `bc7ef56`) — publish-image did not fire on preview.13 (change face missed the `paths: ['docker/**', …]` trigger; re-fire = commit marker `[image:<tag>]`, workflow_dispatch `image_tag`, or touching `docker/**`) | the plugin repository |
 | Pinned ignition components | `irreversible_executor.py` `d2189f2c4f1e585e` · `thermo_core.py` `f47d4ab7700c4533` · executor self-test, pinned copy `62cb86c40a805b56` · Lean companion `IrreversibleDeposon.lean` `0decb3a4059fd9e4` (58 theorems) | the plugin repository / registered in the criteria file |
 | Experiment criteria | `criteria_v3` v1.2 frozen (`9d10c2b3b4c577f7`) plus the numeric backfill v1.2.1 (`horizon.value = 12`, `46e057711035e9b3`); gates G-C1 / G-A2 / G-A3 / G-B; validator verdicts registered 2026-11-27 morning (see Experiment status) | registered in the experiment receipt packs; not stored in this repository |
 | Manuscript | revision 4.17 (commit `2c8252f`, tex `582031697650be00`, 530 lines, 30 pages) of the v5preR3 manuscript, frozen as FREEZE v13 at the branch tip `dea75bc`, on branch `private/v5preR3` of the public repository `zeroandcat/Deposon` (77 commits; not merged into that repository's `main` — unrelated histories, editorial decision pending) | the public repository |
@@ -116,12 +116,24 @@ topic for discoverability, an npm package declaring `dsh.bundle.patch`, and a
 Cordis `apply(ctx, config)` entry):
 
 ```bash
-# from a running dsh agent / Web UI plugin manager:
-dsh plugin add https://github.com/zeroandcat/dsh-plugin-deposon
+# from a running dsh agent / Web UI plugin manager (marketplace convention:
+# bare package name = latest tag; append @version only if the registry has
+# not caught up or the newest build misbehaves in your environment):
+dsh plugin --profile web add dsh-plugin-deposon    # restart dsh web
 
-# or from a local clone (path: spec):
-dsh plugin add path:./dsh-plugin-deposon
+# no global dsh? npx variant:
+npx -y @deepseek-ai/dsh plugin --profile web add dsh-plugin-deposon
+
+# from the git source (repo head, not the npm registry):
+dsh plugin --profile web add https://github.com/zeroandcat/dsh-plugin-deposon
+
+# from a local clone (path: spec):
+dsh plugin --profile web add path:./dsh-plugin-deposon
 ```
+
+> Version pinning: the paper cites `v0.1.0-preview.11` for reproducibility —
+> pin it explicitly as `dsh-plugin-deposon@0.1.0-preview.11` (the `@version`
+> exception note, marketplace convention); latest floats by default.
 
 Once installed, the plugin mounts as bundle entry `deposon` (see
 `cordis.patch.yml`) and exposes the gates self-test as an agent-callable
