@@ -11,7 +11,8 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && python3 -m venv /opt/venv
 
-ENV PATH="/opt/venv/bin:${PATH}"
+ENV PATH="/opt/venv/bin:${PATH}" \
+    LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONIOENCODING=utf-8
 RUN python3 -m pip install --no-cache-dir cryptography
 
 WORKDIR /app
@@ -28,9 +29,12 @@ COPY tests/ tests/
 # Build-time health gate, same commands as ci.yml (E-off arm pins the frozen
 # selftest_mcp child D10; organ checks construct the executor directly).
 ENV DEPOSON_EXECUTOR=0
-RUN python3 mcp/selftest_mcp.py \
- && python3 mcp/selftest_organ_v3.py \
- && node tests/test_plugin_load.mjs
+# Split layers so a failing face names itself in the build log (gates first:
+# same command as ci.yml's gate arithmetic self-test step).
+RUN python3 tests/test_gates.py
+RUN python3 mcp/selftest_mcp.py
+RUN python3 mcp/selftest_organ_v3.py
+RUN node tests/test_plugin_load.mjs
 
 # Default face: executor on (cryptography installed); E-off stays one env away.
 ENV DEPOSON_EXECUTOR=
