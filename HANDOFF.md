@@ -19,11 +19,11 @@ aligned baseline table lives in the "Status" section of `README.md`.
   `v0.1.0-preview.12` (`dd441be`, tag object `6d66c6ec678f7baf` — P481 C3) and
   `v0.1.0-preview.13` (`e8fe281`, tag object `012a0d0888e7c768` — pushed
   2026-11-27 22:08, single FF 0 force, three refs aligned, CI three triggers
-  all success) stay the stable points. The development frontier is `e8fe281`
-  on `b/organ-v311-preview11` (preview.13: docs/version bump `368cc7d` plus
-  the `EtaAlphaMap.lean` companion; the G4-A driver upgrade `fc74e10` —
-  `deepen_r33 --train-steps`, PI 23:04 verdict A — is local pending the push
-  window). GHCR runtime image remains `preview.12` (`sha256:de0701a9…`):
+  all success) stay the stable points. The development frontier is `535b433`
+  on `b/organ-v311-preview11` (preview.14 docs-only clearance; the G4-A driver
+  upgrade `fc74e10` — `deepen_r33 --train-steps`, PI 23:04 verdict A — and the
+  preview.14 docs bump were pushed 2026-11-28, single FF 0 force, `main`
+  untouched; preview.13 chain `368cc7d`+`e8fe281` precedes them). GHCR runtime image remains `preview.12` (`sha256:de0701a9…`):
   publish-image did not fire on preview.13 because the change face missed the
   `paths: ['docker/**', '.github/workflows/publish.yml']` trigger — re-fire
   paths = commit marker `[image:<tag>]`, workflow_dispatch `image_tag`, or
@@ -66,8 +66,8 @@ Status. Readings data never enters this repository (artifacts policy).
 | 位 | 值 |
 |---|---|
 | 仓址 | `github.com/zeroandcat/dsh-plugin-deposon` |
-| 分支 | `b/organ-v311-preview11` → HEAD `e8fe281`（preview.13 线：docs/version bump `368cc7d`＋Lean 伴件 `EtaAlphaMap.lean`·码基 `9219e78` 父 `6110448`·2026-11-27 22:08 已推；G4-A 驱动器升版 `fc74e10` 本地候推送窗） |
-| main | `1e27d7c`（origin/main·本分支领先 5） |
+| 分支 | `b/organ-v311-preview11` → HEAD `535b433`（preview.14 docs-only 尖：preview.13 线 docs/version bump `368cc7d`＋Lean 伴件 `e8fe281`＋G4-A 驱动器升版 `fc74e10`＋四锚清位 `535b433`·2026-11-28 已推·FF 0 force；码基 `9219e78` 父 `6110448`） |
+| main | `e8fe281`（origin/main·preview.13 推送时 FF·本分支领先 2） |
 | tag | `v0.1.0-preview.12` → `dd441be`（tag 对象 `6d66c6ec678f7baf`·P481 C3 甲 2026-11-27 已打已推·CI 双绿）；`v0.1.0-preview.11` → `5efc158` 沿革 |
 | 版本源 | `package.json` `0.1.0-preview.14`（唯一版本源·MCP clientInfo 与升级工具均读它；preview.12/13 态由 git tag 标记·docs-only 轮 bump .13→.14·沿革注） |
 | preview.12 主件 | `plugin/update.mjs`（selfcheck/plan/apply/rollback·四支柱）＋ `tests/test_update_path.mjs`（16/16） |
