@@ -23,6 +23,7 @@ COPY gates/ gates/
 COPY harness/ harness/
 COPY scripts/ scripts/
 COPY frozen/ frozen/
+COPY docs/ docs/   # family_linkage gate reads docs/family-linkage.md (build log lesson 2026-11-27)
 COPY mocks/ mocks/
 COPY tests/ tests/
 
