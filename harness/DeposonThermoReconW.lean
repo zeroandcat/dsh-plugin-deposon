@@ -1,6 +1,12 @@
 /-
 DeposonThermoReconW.lean — σ / W2 / W5 三项求证件（PI 18:01 A5·lean 求证位）
 
+头注沿革: v1（daf39e5e3cab…）头注「P-σ 以定理前提承载」与件内 §W-4（以
+          sigma_invariant 定理＋定义承载）自相不一——本席 Lean 双审意见件 C3 审出
+          （实况＝后者：P-σ 是 SigmaLedger 第六字段记录定义·sigma_invariant 证其
+          不变性·0 定理以 P-σ 为前提）；preview.12 附B 甲（PI P481 裁 2026-11-27）
+          沿该件 C3 候选改文勘正头注两处措辞·定理与证明体 0 动。
+
 令源: PI 2026-11-26 18:01 裁定执行批 A5（kimi round12 七项中三项逐项 Lean 求证出件）:
       · σ  = A 侧稳态参照 —— PI 裁「引入」（③/3b 二选一取引入·P2 降定理路径）
       · W2 = 舍入函子复合性（Alabama 悖论）—— PI 裁「承认整数账仅单事件粒度守恒并利用」
@@ -16,7 +22,10 @@ DeposonThermoReconW.lean — σ / W2 / W5 三项求证件（PI 18:01 A5·lean �
 
 三层落位（σ 引入涉新公设/定义位·按 PI 令面三层落）:
   §W-σ 定义层   —— SigmaLedger（v2 Ledger 五字段 + sigma_ref 第六字段）
-  §W-σ 公设位   —— P-σ「A 侧稳态参照存在且独立于事件」: 以**定理前提**承载·
+  §W-σ 公设位   —— P-σ「A 侧稳态参照存在且独立于事件」: 以**定义承载＋不变性定理**
+                    （sigma_invariant·五迁移任一单步不改 sigma_ref）承载·deliberately
+                    not as an axiom·**非任何定理的前提**（头注措辞勘正·preview.12 附B 甲·
+                    沿本席 Lean 双审意见件 C3 候选改文·PI P481 裁 2026-11-27）·
                     不入 Lean 公理面（0 新增 axiom·公理纪律与 v2 同）
   §W-σ 定理层   —— sigma_invariant（P-σ 穷尽承载）/ diss_rel_mono 三条（DPI 账面像）/
                     strict_increase_no_return（因果方向倒转像·③b 主定理）/
@@ -72,7 +81,8 @@ namespace DeposonThermoReconW
 -- 账面像落位（如实注·不越层）:
 --   · 本体层「σ 存在唯一」是 W4 难点（L 本原 ⇒ σ 唯一且 Λ_t → σ）·账面像上 sigma_ref
 --     是 Nat 常量·存在性平凡化——账面像只承载「参照独立于事件」的结构位（P-σ）。
---   · P-σ 以定理前提/定义承载·**不入 Lean axiom 面**（0 新增公理·v2 公理纪律同）。
+--   · P-σ 以定义承载＋不变性定理（sigma_invariant）承载·非定理前提·**不入 Lean
+--     axiom 面**（0 新增公理·v2 公理纪律同）——措辞勘正同头注（preview.12 附B 甲）。
 
 /-- σ 扩展账本态: v2 Ledger 五字段（形态级复刻·继承锚）＋ A 侧稳态参照水位
     sigma_ref（第六字段·kimi ③b 的 σ 账面承载）。
