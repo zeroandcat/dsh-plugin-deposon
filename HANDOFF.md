@@ -19,7 +19,10 @@ aligned baseline table lives in the "Status" section of `README.md`.
   `v0.1.0-preview.12` (`dd441be`, tag object `6d66c6ec678f7baf` — P481 C3) and
   `v0.1.0-preview.13` (`e8fe281`, tag object `012a0d0888e7c768` — pushed
   2026-11-27 22:08, single FF 0 force, three refs aligned, CI three triggers
-  all success) stay the stable points. The development frontier is `535b433`
+  all success) and `v0.1.0-preview.14` (`535b433`, tag object
+  `3c790d3c16f7fa80` — docs-only clearance round, stamped 2026-11-28 under
+  the PI plugin-continuation order, Dave four-anchor gate all-pass) stay the
+  stable points. The development frontier is `535b433`
   on `b/organ-v311-preview11` (preview.14 docs-only clearance; the G4-A driver
   upgrade `fc74e10` — `deepen_r33 --train-steps`, PI 23:04 verdict A — and the
   preview.14 docs bump were pushed 2026-11-28, single FF 0 force, `main`
@@ -68,8 +71,8 @@ Status. Readings data never enters this repository (artifacts policy).
 | 仓址 | `github.com/zeroandcat/dsh-plugin-deposon` |
 | 分支 | `b/organ-v311-preview11` → HEAD `535b433`（preview.14 docs-only 尖：preview.13 线 docs/version bump `368cc7d`＋Lean 伴件 `e8fe281`＋G4-A 驱动器升版 `fc74e10`＋四锚清位 `535b433`·2026-11-28 已推·FF 0 force；码基 `9219e78` 父 `6110448`） |
 | main | `e8fe281`（origin/main·preview.13 推送时 FF·本分支领先 2） |
-| tag | `v0.1.0-preview.12` → `dd441be`（tag 对象 `6d66c6ec678f7baf`·P481 C3 甲 2026-11-27 已打已推·CI 双绿）；`v0.1.0-preview.11` → `5efc158` 沿革 |
-| 版本源 | `package.json` `0.1.0-preview.14`（唯一版本源·MCP clientInfo 与升级工具均读它；preview.12/13 态由 git tag 标记·docs-only 轮 bump .13→.14·沿革注） |
+| tag | `v0.1.0-preview.14` → `535b433`（tag 对象 `3c790d3c16f7fa80`·docs-only 四锚清位·2026-11-28 已打·戴夫四锚门全过·PI 插件续推令授权链）；`v0.1.0-preview.13` → `e8fe281`（tag 对象 `012a0d0888e7c768`·2026-11-27 22:08 已推·CI 三触发全 success）；`v0.1.0-preview.12` → `dd441be`（tag 对象 `6d66c6ec678f7baf`·P481 C3 甲 2026-11-27 已打已推·CI 双绿）；`v0.1.0-preview.11` → `5efc158` 沿革 |
+| 版本源 | `package.json` `0.1.0-preview.14`（唯一版本源·MCP clientInfo 与升级工具均读它；preview.12/13/14 态由 git tag 标记·docs-only 轮 bump .13→.14·沿革注） |
 | preview.12 主件 | `plugin/update.mjs`（selfcheck/plan/apply/rollback·四支柱）＋ `tests/test_update_path.mjs`（16/16） |
 | I-3 era 握手 | MCP `initialize` 自报 `era`（executor｜preview.10）＋`executorConfigDigest`·驱动器/自测件声明期望·不等 fail-loud（防臂串线） |
 | I-4 依赖探测 | 执行器 lazy import——E-off 面 0 第三方依赖；执行器态缺 cryptography ⇒ stderr 明示＋exit 3（不静默降级） |
