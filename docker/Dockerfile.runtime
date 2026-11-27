@@ -1,0 +1,37 @@
+# dsh-plugin-deposon runtime image (GHCR publish face, PI PAT window 2026-11-27)
+# Channels: MCP stdio server (default ENTRYPOINT) + Cordis plugin host face.
+# Face parity: CI ci.yml gates-selftest runs the same commands (E-off pinned
+# self-test arm + executor face with cryptography installed). No model or
+# training assets here -- training/base images live in the experiment line.
+FROM node:22-bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends python3 python3-venv ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && python3 -m venv /opt/venv
+
+ENV PATH="/opt/venv/bin:${PATH}"
+RUN python3 -m pip install --no-cache-dir cryptography
+
+WORKDIR /app
+COPY cordis.patch.yml package.json ./
+COPY plugin/ plugin/
+COPY mcp/ mcp/
+COPY gates/ gates/
+COPY harness/ harness/
+COPY scripts/ scripts/
+COPY frozen/ frozen/
+COPY mocks/ mocks/
+COPY tests/ tests/
+
+# Build-time health gate, same commands as ci.yml (E-off arm pins the frozen
+# selftest_mcp child D10; organ checks construct the executor directly).
+ENV DEPOSON_EXECUTOR=0
+RUN python3 mcp/selftest_mcp.py \
+ && python3 mcp/selftest_organ_v3.py \
+ && node tests/test_plugin_load.mjs
+
+# Default face: executor on (cryptography installed); E-off stays one env away.
+ENV DEPOSON_EXECUTOR=
+ENTRYPOINT ["python3", "mcp/mcp_server.py"]
