@@ -145,7 +145,8 @@ in-register, 0 estimated; verdicts belong to the PI.
   digest-face caliber ② sweep_ledger.jsonl + sweepB.log SWEEP-B-DONE
   cross-read ③ 11-point arm_rc + criteria/digest expectations vs the
   pre-registered base ④ verification package to the group. Verdicts: PI.
-- **r33 arm-level anchor (sweepB pt, 41995 log tail)**: DEEPEN-R33-DONE
+- **r33 arm-level anchor (sweepB ptk_max4 log tail, 41995; Bob F4 label
+  errata 2026-11-28 — values all true, source label corrected)**: DEEPEN-R33-DONE
   round=R3.3-criteria_v3, to=200, wall 2103.7 s, best_step 190, viol_total 0,
   nan_free true, lost_set_sha12 `bf5c1197646d`, manifest_sha12 `e7cefc4673bb`,
   reading_pkg_sha12 `243801d4…`, face4a three true, r_obs util_A 0.9875 /
